@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const admin = require("firebase-admin");
 
 // Automatically load .env file if present
@@ -29,9 +30,22 @@ if (fs.existsSync(envPath)) {
 let initialized = false;
 let useLocalFallback = false;
 
+const isServerless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
 // Local persistent file store for offline/demo operation when Firebase credentials are not yet configured
-const LOCAL_STORE_DIR = path.join(__dirname, "..", "..", ".data");
+const LOCAL_STORE_DIR = isServerless
+  ? path.join(os.tmpdir(), "gcounsel-data")
+  : path.join(__dirname, "..", "..", ".data");
 const LOCAL_STORE_FILE = path.join(LOCAL_STORE_DIR, "firestore-local.json");
+
+function formatPrivateKey(rawKey) {
+  if (!rawKey) return "";
+  let key = rawKey.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
+  }
+  return key.replace(/\\n/g, "\n");
+}
 
 function ensureLocalStore() {
   if (!fs.existsSync(LOCAL_STORE_DIR)) {
@@ -190,6 +204,10 @@ function initFirebaseAdmin() {
     Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
   if (!hasCredentials) {
+    if (isServerless) {
+      console.error("Missing Firebase Admin credentials on server! Available keys:", Object.keys(process.env).filter(k => k.includes("FIREBASE")));
+      throw new Error("Missing Firebase Admin credentials on server. Please verify FIREBASE_ADMIN_PROJECT_ID and FIREBASE_ADMIN_PRIVATE_KEY in Netlify.");
+    }
     useLocalFallback = true;
     initialized = true;
     return admin;
@@ -197,19 +215,18 @@ function initFirebaseAdmin() {
 
   try {
     const { initializeApp, cert, getApps } = require("firebase-admin/app");
-    const { getFirestore } = require("firebase-admin/firestore");
-    const { getAuth } = require("firebase-admin/auth");
 
     if (getApps().length === 0) {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
         initializeApp({ credential: cert(serviceAccount) });
       } else if (process.env.FIREBASE_ADMIN_PROJECT_ID && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        const privateKey = formatPrivateKey(process.env.FIREBASE_ADMIN_PRIVATE_KEY);
         initializeApp({
           credential: cert({
             projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
             clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n"),
+            privateKey: privateKey,
           }),
         });
       } else {
@@ -218,7 +235,10 @@ function initFirebaseAdmin() {
     }
     initialized = true;
   } catch (error) {
-    console.warn("Firebase Admin failed to connect to Cloud, using local store:", error.message);
+    console.error("Firebase Admin initialization error:", error.message);
+    if (isServerless) {
+      throw new Error("Firebase Admin failed to connect to Cloud: " + error.message);
+    }
     useLocalFallback = true;
     initialized = true;
   }
@@ -235,6 +255,7 @@ function getDb() {
     const { getFirestore } = require("firebase-admin/firestore");
     return getFirestore();
   } catch (e) {
+    if (isServerless) throw e;
     return new LocalFirestoreMock();
   }
 }
@@ -254,30 +275,7 @@ function getAuth() {
     const { getAuth } = require("firebase-admin/auth");
     return getAuth();
   } catch (e) {
-    return {
-      createUser: async ({ email, displayName }) => ({
-        uid: `counselor_${Date.now()}`,
-        email,
-        displayName,
-      }),
-    };
-  }
-}
-
-function getAuth() {
-  initFirebaseAdmin();
-  if (useLocalFallback) {
-    return {
-      createUser: async ({ email, displayName }) => ({
-        uid: `counselor_${Date.now()}`,
-        email,
-        displayName,
-      }),
-    };
-  }
-  try {
-    return admin.auth();
-  } catch (e) {
+    if (isServerless) throw e;
     return {
       createUser: async ({ email, displayName }) => ({
         uid: `counselor_${Date.now()}`,
