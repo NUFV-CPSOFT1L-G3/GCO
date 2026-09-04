@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign In — Guidance Office</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body class="auth-body">
+    <div class="auth-shell">
+      <div class="auth-panel">
+        <div class="auth-brand">GCounsel</div>
+        <div class="auth-subtitle">Counselor / Admin</div>
+
+        <form id="loginForm" class="auth-form">
+          <div class="field-block">
+            <label class="field-label" for="email">Email/Username</label>
+            <input class="field-input" type="email" id="email" required autocomplete="username" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="password">Password</label>
+            <div class="password-wrap">
+              <input class="field-input" type="password" id="password" required autocomplete="current-password" />
+              <button type="button" class="toggle-password" aria-label="Show password">Show</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-dark auth-button">Log In</button>
+          <div class="errorMessage" id="errorMsg"></div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/login.js"></script>
+  </body>
+</html>

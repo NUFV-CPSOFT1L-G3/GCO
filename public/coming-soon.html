@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coming Soon — Guidance Office</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body>
+    <div class="app" id="app"></div>
+    <script src="/js/api.js"></script>
+    <script src="/js/nav.js"></script>
+    <script>
+      (async () => {
+        const counselor = await requireCounselor();
+        if (!counselor) return;
+
+        document.getElementById("app").innerHTML = `
+          ${renderNav("", counselor)}
+          <div class="main">
+            <div class="comingsoon">
+              <h1>Coming soon</h1>
+              <p>This section isn't built yet — check back in a future phase.</p>
+            </div>
+          </div>
+          </div>
+        `;
+
+        attachLogoutHandler();
+      })();
+    </script>
+  </body>
+</html>
