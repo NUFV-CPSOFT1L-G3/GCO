@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feedback Survey — GCOunsel</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body class="auth-body">
+    <header class="mainHeader">
+      <div class="headerLeft">
+        <div class="brandName">GCOunsel</div>
+      </div>
+      <div class="headerRight">
+        <a href="/" class="nav-portal-link">← Return to Home</a>
+      </div>
+    </header>
+
+    <div class="booking-container">
+      <div class="booking-card feedback-card">
+        <div class="portal-header">
+          <h1 class="brand-title">GCOunsel</h1>
+          <p class="brand-subtitle">Guidance Counseling Appointment Management</p>
+        </div>
+
+        <div id="loadingBox" style="text-align: center; padding: 40px 0; color: var(--text-secondary);">
+          Verifying consultation session...
+        </div>
+
+        <div id="feedbackNoticeBox" class="alert-box-static" style="display: none;"></div>
+
+        <div id="surveyFormArea" style="display: none;">
+          <div class="counselor-avatar-header">
+            <div class="large-avatar">👤</div>
+            <h2 class="counselor-target-name" id="counselorTargetName">Counselor Name</h2>
+            <p class="feedback-invitation-sub">Thank you for your consultation. Please rate your experience.</p>
+          </div>
+
+          <form id="feedbackForm">
+            <div class="feedback-panel">
+              <!-- Star Rating -->
+              <div class="rating-row">
+                <span class="rating-label">Overall Rating:</span>
+                <div class="star-rating" id="starContainer">
+                  <span class="star" data-value="1">★</span>
+                  <span class="star" data-value="2">★</span>
+                  <span class="star" data-value="3">★</span>
+                  <span class="star" data-value="4">★</span>
+                  <span class="star" data-value="5">★</span>
+                </div>
+                <input type="hidden" id="selectedRating" value="" />
+              </div>
+
+              <!-- Appreciated Aspects -->
+              <div class="appreciated-section">
+                <div class="field-label">What did you appreciate?</div>
+                <div class="checkbox-options-grid">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="appreciated" value="Helpful" />
+                    <span class="box"></span>
+                    <span class="lbl">Helpful</span>
+                  </label>
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="appreciated" value="Professional" />
+                    <span class="box"></span>
+                    <span class="lbl">Professional</span>
+                  </label>
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="appreciated" value="Friendly" />
+                    <span class="box"></span>
+                    <span class="lbl">Friendly</span>
+                  </label>
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="appreciated" value="Good Listener" />
+                    <span class="box"></span>
+                    <span class="lbl">Good Listener</span>
+                  </label>
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="appreciated" value="Comfortable Environment" />
+                    <span class="box"></span>
+                    <span class="lbl">Comfortable Environment</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Comments -->
+              <div class="field-block" style="margin-top: 18px;">
+                <label class="field-label" for="comments">Additional Comments</label>
+                <textarea id="comments" class="field-input feedback-textarea" rows="4" placeholder="Share your thoughts about your counseling experience..."></textarea>
+              </div>
+            </div>
+
+            <div class="errorMessage" id="feedbackError"></div>
+
+            <button type="submit" class="btn btn-dark btn-block btn-submit-appt" id="submitFeedbackBtn">
+              Submit Feedback
+            </button>
+          </form>
+        </div>
+
+        <div id="thankYouBox" class="thank-you-view" style="display: none;">
+          <div class="conf-check-icon">✓</div>
+          <h2>Thank You!</h2>
+          <p>Your feedback has been successfully submitted and helps us improve our guidance counseling services at National University – Fairview.</p>
+          <a href="/" class="btn btn-dark" style="margin-top: 16px;">Back to Home</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/feedback.js"></script>
+  </body>
+</html>

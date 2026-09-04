@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isCounselor(counselorId) {
+      return isAuthenticated() && request.auth.uid == counselorId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/counselors/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/counselors/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Counselors collection
+    match /counselors/{counselorId} {
+      // Anyone can view counselor public profile & availability to book sessions
+      allow read: if true;
+      // Counselor can update their own schedule, profile & availability; Admin can manage all
+      allow update: if isCounselor(counselorId) || isAdmin();
+      allow create, delete: if isAdmin();
+    }
+
+    // Appointments collection (Compliant with Philippine Data Privacy Act RA 10173)
+    match /appointments/{appointmentId} {
+      // Counselors can only read their own appointments; Admins can read all
+      allow read: if (isAuthenticated() && resource.data.counselorId == request.auth.uid) || isAdmin();
+      
+      // Appointment creation is restricted to trusted serverless backend (Netlify Functions)
+      // Counselor can update status/cancellation of their appointments; Admins can update all
+      allow update: if (isAuthenticated() && resource.data.counselorId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+      allow create: if false; // Server-side execution via Netlify Function
+    }
+
+    // Feedback collection
+    match /feedback/{feedbackId} {
+      // Counselors can view feedback left for them; Admins can view all
+      allow read: if (isAuthenticated() && resource.data.counselorId == request.auth.uid) || isAdmin();
+      // Submission is handled securely via Netlify Function
+      allow create: if false;
+      allow update, delete: if isAdmin();
+    }
+
+    // System counters
+    match /counters/{counterId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}

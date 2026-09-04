@@ -3,13 +3,113 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dashboard — Guidance Office</title>
+    <title>Counselor Dashboard — GCOunsel</title>
     <link rel="stylesheet" href="/css/base.css" />
   </head>
   <body>
     <div class="app" id="app"></div>
 
-    <script src="/js/api.js"></script>
+    <!-- Cancellation Modal -->
+    <div class="modal-overlay" id="cancelModal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Cancel Appointment</h3>
+        <p class="modal-desc" id="cancelApptDetails">Please specify the reason for cancelling this appointment:</p>
+        
+        <form id="cancelForm">
+          <input type="hidden" id="cancelApptId" />
+          
+          <div class="field-block">
+            <label class="field-label" for="cancelReason">Reason for Cancellation <span class="req">*</span></label>
+            <select id="cancelReason" class="field-input" required>
+              <option value="">-- Select Predefined Reason --</option>
+              <option value="Student Requested Cancellation">Student Requested Cancellation</option>
+              <option value="Counselor Unavailable">Counselor Unavailable</option>
+              <option value="Office Closure or Holiday">Office Closure or Holiday</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Others with remarks">Others with remarks</option>
+            </select>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="cancelRemarks">Remarks / Notes (Optional)</label>
+            <textarea id="cancelRemarks" class="field-input" rows="2" placeholder="Additional explanation..."></textarea>
+          </div>
+
+          <div class="errorMessage" id="cancelError"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" id="closeCancelModalBtn">Keep Appointment</button>
+            <button type="submit" class="btn btn-danger" id="confirmCancelBtn">Confirm Cancellation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="profileModal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Edit Counselor Profile</h3>
+        <form id="profileForm">
+          <div class="field-block">
+            <label class="field-label" for="profName">Counselor Name</label>
+            <input type="text" id="profName" class="field-input" required />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="profTitle">Title & Credentials</label>
+            <input type="text" id="profTitle" class="field-input" placeholder="e.g. MS, LPC, LMHC, RGC" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Preferred Counseling Areas</label>
+            <div class="checkbox-options-grid" style="grid-template-columns: 1fr 1fr;">
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Academic" />
+                <span class="box"></span>
+                <span class="lbl">Academic</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Career" />
+                <span class="box"></span>
+                <span class="lbl">Career</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Personal" />
+                <span class="box"></span>
+                <span class="lbl">Personal</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Family" />
+                <span class="box"></span>
+                <span class="lbl">Family</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Social" />
+                <span class="box"></span>
+                <span class="lbl">Social</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" name="profAreas" value="Mental Wellness" />
+                <span class="box"></span>
+                <span class="lbl">Mental Wellness</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" id="closeProfileModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-dark" id="saveProfileBtn">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/auth.js"></script>
     <script src="/js/nav.js"></script>
     <script src="/js/dashboard.js"></script>
   </body>

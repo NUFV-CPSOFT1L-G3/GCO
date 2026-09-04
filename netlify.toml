@@ -1,0 +1,62 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_OMIT_KEYS = "FROM_EMAIL,APP_BASE_URL,SMTP_HOST,FIREBASE_PROJECT_ID,FIREBASE_MESSAGING_SENDER_ID,FIREBASE_AUTH_DOMAIN,FIREBASE_APP_ID,FIREBASE_STORAGE_BUCKET,FIREBASE_API_KEY"
+
+# Netlify Serverless API Routing
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Clean Friendly URL Routes
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/schedule"
+  to = "/schedule.html"
+  status = 200
+
+[[redirects]]
+  from = "/availability"
+  to = "/availability.html"
+  status = 200
+
+[[redirects]]
+  from = "/feedback"
+  to = "/feedback.html"
+  status = 200
+
+# Fallback Route
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# HTTP Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+

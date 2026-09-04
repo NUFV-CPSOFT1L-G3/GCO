@@ -690,3 +690,1057 @@ p.pagesub {
   margin-bottom: 8px;
 }
 
+/* ==============================================================================
+   GCOunsel Custom UI Component Extensions
+   ============================================================================== */
+
+.nav-portal-link {
+  color: #f4f4f4;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s ease;
+}
+
+.nav-portal-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.auth-access-title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.btn-microsoft {
+  background: #ffffff;
+  border: 1px solid #c8c8c8;
+  color: #2f2f2f;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.btn-microsoft:hover {
+  background: #f7f7f7;
+  border-color: #999;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0 16px;
+  color: #888;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
+
+.demo-creds-hint {
+  margin-top: 24px;
+  padding: 12px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.demo-creds-hint code {
+  background: #e0e0e0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+/* Student Booking Form (User Screen 1) */
+.booking-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 54px);
+  padding: 40px 16px;
+  background: var(--background-app);
+}
+
+.booking-card {
+  width: min(100%, 640px);
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 36px 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.feedback-card {
+  width: min(100%, 560px);
+}
+
+.portal-header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.brand-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.brand-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.form-section {
+  margin-bottom: 26px;
+}
+
+.form-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.req {
+  color: var(--danger);
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.email-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: var(--white);
+  overflow: hidden;
+}
+
+.email-field {
+  border: none !important;
+  box-shadow: none !important;
+  flex: 1;
+}
+
+.email-suffix {
+  background: #f4f4f4;
+  color: #555;
+  font-size: 12px;
+  padding: 10px 12px;
+  font-weight: 600;
+  border-left: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+/* Custom Checkboxes */
+.checkbox-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.custom-checkbox:hover {
+  background: #f9f9f9;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.custom-checkbox .box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #888;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+
+.custom-checkbox input[type="checkbox"]:checked + .box {
+  background: var(--surface-strong);
+  border-color: var(--surface-strong);
+}
+
+.custom-checkbox input[type="checkbox"]:checked + .box::after {
+  content: "✓";
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-submit-appt {
+  padding: 14px;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+/* Slot Selection Pills */
+.slots-pill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.slot-pill {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f9f9f9;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.slot-pill:hover {
+  background: #ececec;
+  border-color: #888;
+}
+
+.slot-pill.active {
+  background: var(--surface-strong);
+  color: #fff;
+  border-color: var(--surface-strong);
+}
+
+.slot-notice {
+  font-size: 12px;
+  color: #d97706;
+  background: #fef3c7;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.slot-loading {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 10px 0;
+}
+
+/* Confirmation Modal (User Screen 2) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.confirmation-card {
+  width: min(100%, 460px);
+  background: var(--white);
+  border-radius: 10px;
+  padding: 32px 36px;
+  text-align: center;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.conf-check-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.conf-heading {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 16px;
+}
+
+.conf-details-box {
+  background: #f9f9f9;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.conf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #ebebeb;
+  font-size: 13px;
+}
+
+.conf-row:last-child {
+  border-bottom: none;
+}
+
+.conf-lbl {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.conf-val {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.conf-highlight {
+  color: #0b69a3;
+  font-size: 15px;
+}
+
+.conf-email-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Feedback Survey (User Screen 3) */
+.counselor-avatar-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.large-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin: 0 auto 12px;
+  border: 2px solid #ccc;
+}
+
+.counselor-target-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.feedback-invitation-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.feedback-panel {
+  background: #f9f9f9;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.rating-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.star-rating {
+  display: flex;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.star {
+  font-size: 26px;
+  color: #ccc;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.star.active {
+  color: #d2a72e;
+}
+
+.feedback-textarea {
+  resize: vertical;
+}
+
+.thank-you-view {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* Counselor Homepage Layout (GCO Web Screen 1) */
+.counselor-home-grid {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.counselor-profile-card {
+  width: 320px;
+  flex-shrink: 0;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.counselor-profile-header .counselor-name {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.counselor-profile-header .counselor-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.counselor-profile-header .counselor-credentials {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.counselor-areas-box {
+  background: #f8f8f8;
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  padding: 14px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.area-box-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.areas-pill-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.area-tag {
+  font-size: 12px;
+  color: #555;
+}
+
+.area-tag.checked {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.counselor-metrics-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.metric-item {
+  flex: 1;
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.metric-num {
+  font-size: 22px;
+  font-weight: 800;
+  display: block;
+}
+
+.metric-lbl {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.counselor-schedule-col {
+  flex: 1;
+}
+
+.appt-card-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.appt-time-col {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #1a1a1a;
+}
+
+.appt-end-time {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.appt-main-col {
+  flex: 1;
+}
+
+.appt-student-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.appt-student-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.appt-conf-tag {
+  font-size: 10px;
+  color: #888;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.appt-status-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.badge-upcoming {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-noshow {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-appointment {
+  background: #374151;
+  color: #fff;
+}
+
+.badge-available {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.badge-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.appt-actions-dropdown {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: #961d16;
+}
+
+/* Recent Feedback rows */
+.feedback-entry-row {
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.feedback-entry-row:last-child {
+  border-bottom: none;
+}
+
+.fb-stars {
+  color: #d2a72e;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.fb-comment {
+  font-size: 13px;
+  color: #262626;
+  font-style: italic;
+  margin: 6px 0;
+}
+
+.fb-student-tag {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.fb-appreciated {
+  color: #0369a1;
+}
+
+/* Counselor Calendar (GCO Web Screen 2) */
+.counselor-calendar-container {
+  display: flex;
+  gap: 28px;
+  padding: 28px;
+}
+
+.cal-picker-box {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.cal-month-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cal-current-month {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.cal-day-cell {
+  height: 40px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.cal-day-cell:hover {
+  background: #f0f0f0;
+}
+
+.cal-day-cell.selected {
+  background: var(--surface-strong);
+  color: #fff;
+  border-color: var(--surface-strong);
+  font-weight: 700;
+}
+
+.cal-day-cell.today:not(.selected) {
+  border-color: #d2a72e;
+  font-weight: 700;
+}
+
+.cal-day-cell.empty {
+  border: none;
+  cursor: default;
+}
+
+.cal-day-cell.blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.day-indicators {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  bottom: 2px;
+}
+
+.indicator-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+.dot-appt {
+  background: #0284c7;
+}
+
+.dot-blocked {
+  background: var(--danger);
+}
+
+.cal-legend-bar {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 14px;
+}
+
+.cal-daily-view {
+  flex: 1;
+}
+
+.daily-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 16px;
+}
+
+.daily-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.daily-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.daily-slot-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  gap: 16px;
+}
+
+.slot-booked {
+  background: #f9f9f9;
+  border-left: 4px solid var(--surface-strong);
+}
+
+.slot-open {
+  background: #fff;
+}
+
+.slot-time-lbl {
+  width: 150px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+}
+
+.slot-status-lbl {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slot-student-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.slot-meta-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Availability Page */
+.availability-grid {
+  display: flex;
+  gap: 28px;
+}
+
+.avail-left-col {
+  flex: 1.4;
+}
+
+.avail-right-col {
+  flex: 1;
+}
+
+.block-reason-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Admin Center (Admin Screen 1 & 2) */
+.admin-top-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.admin-date-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cat-bar-row {
+  margin-bottom: 12px;
+}
+
+.cat-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.cat-bar-track {
+  height: 8px;
+  background: #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  height: 100%;
+  background: var(--surface-strong);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table th {
+  background: #f5f5f5;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.data-table tr:hover {
+  background: #fbfbfb;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.conf-tag-cell {
+  font-family: monospace;
+  color: #0b69a3;
+  font-size: 11px;
+}
+
+.filter-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.status-filter-pills {
+  display: flex;
+  gap: 6px;
+}
+
+/* Modals */
+.modal-card {
+  width: min(100%, 480px);
+  background: var(--white);
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.modal-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.alert-box-static {
+  padding: 14px 18px;
+  border-radius: 6px;
+  background: #fff9e6;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 13px;
+  margin: 16px 0;
+  line-height: 1.5;
+}
+
+.alert-danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .counselor-home-grid,
+  .counselor-calendar-container,
+  .availability-grid,
+  .dash-cols {
+    flex-direction: column;
+  }
+
+  .counselor-profile-card,
+  .cal-picker-box {
+    width: 100%;
+  }
+
+  .booking-card {
+    padding: 24px 20px;
+  }
+}
+
+

@@ -1,9 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta http-equiv="refresh" content="0; url=/dashboard.html" />
-<title>Guidance Office</title>
-</head>
-<body></body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GCOunsel — Guidance Counseling Appointment Management</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body class="auth-body">
+    <!-- Main Header -->
+    <header class="mainHeader">
+      <div class="headerLeft">
+        <div class="brandName">GCOunsel</div>
+      </div>
+      <div class="headerRight">
+        <a href="/login.html" class="nav-portal-link">Counselor / Admin Access →</a>
+      </div>
+    </header>
+
+    <div class="booking-container">
+      <div class="booking-card">
+        <div class="portal-header">
+          <h1 class="brand-title">GCOunsel</h1>
+          <p class="brand-subtitle">Guidance Counseling Appointment Management</p>
+        </div>
+
+        <form id="appointmentForm" novalidate>
+          <!-- Section 1: Student Information -->
+          <div class="form-section">
+            <h2 class="form-section-title">Student Information Form</h2>
+
+            <div class="field-block">
+              <label class="field-label" for="fullName">Full Name (Last Name, First Name MI.) <span class="req">*</span></label>
+              <input type="text" id="fullName" class="field-input" placeholder="e.g. Dela Cruz, Juan M." required />
+            </div>
+
+            <div class="field-block">
+              <label class="field-label" for="studentId">Student ID (20XX-XXXXXX) <span class="req">*</span></label>
+              <input type="text" id="studentId" class="field-input" placeholder="e.g. 2024-123456" pattern="\d{4}-\d{6}" maxlength="11" required />
+              <div class="field-hint">Must match official NU Student ID format.</div>
+            </div>
+
+            <div class="field-block">
+              <label class="field-label" for="emailUsername">NU Email Username <span class="req">*</span></label>
+              <div class="email-input-group">
+                <input type="text" id="emailUsername" class="field-input email-field" placeholder="username" required />
+                <span class="email-suffix">@students.nu-fairview.edu.ph</span>
+              </div>
+              <div class="field-hint">Institutional domain is automatically appended.</div>
+            </div>
+
+            <div class="field-block">
+              <label class="field-label" for="course">Course / Academic Program <span class="req">*</span></label>
+              <select id="course" class="field-input" required>
+                <option value="">Select your course / program...</option>
+                <optgroup label="College of Computer Studies">
+                  <option value="BS Information Technology">BS Information Technology (BSIT)</option>
+                  <option value="BS Computer Science">BS Computer Science (BSCS)</option>
+                </optgroup>
+                <optgroup label="School of Engineering and Technology">
+                  <option value="BS Computer Engineering">BS Computer Engineering (BSCPE)</option>
+                  <option value="BS Civil Engineering">BS Civil Engineering (BSCE)</option>
+                </optgroup>
+                <optgroup label="School of Business and Accountancy">
+                  <option value="BS Accountancy">BS Accountancy (BSA)</option>
+                  <option value="BS Business Administration">BS Business Administration (BSBA)</option>
+                  <option value="BS Hospitality Management">BS Hospitality Management (BSHM)</option>
+                  <option value="BS Tourism Management">BS Tourism Management (BSTM)</option>
+                </optgroup>
+                <optgroup label="School of Arts and Sciences">
+                  <option value="BS Psychology">BS Psychology (BSPsych)</option>
+                </optgroup>
+                <optgroup label="Senior High School">
+                  <option value="SHS - STEM">SHS - Science, Technology, Engineering, and Math (STEM)</option>
+                  <option value="SHS - ABM">SHS - Accountancy, Business, and Management (ABM)</option>
+                  <option value="SHS - HUMSS">SHS - Humanities and Social Sciences (HUMSS)</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section 2: Reason for Consultation -->
+          <div class="form-section">
+            <h2 class="form-section-title">Reason for Consultation:</h2>
+            <div class="field-hint" style="margin-bottom:12px;">Select all that apply:</div>
+            
+            <div class="checkbox-options-grid">
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Academic" />
+                <span class="box"></span>
+                <span class="lbl">Academic</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Career" />
+                <span class="box"></span>
+                <span class="lbl">Career</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Life" />
+                <span class="box"></span>
+                <span class="lbl">Life / Personal</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Mental Wellness" />
+                <span class="box"></span>
+                <span class="lbl">Mental Wellness</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Family" />
+                <span class="box"></span>
+                <span class="lbl">Family</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Social" />
+                <span class="box"></span>
+                <span class="lbl">Social / Relationships</span>
+              </label>
+
+              <label class="custom-checkbox">
+                <input type="checkbox" name="category" value="Others" id="otherCategoryCheck" />
+                <span class="box"></span>
+                <span class="lbl">Others</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 3: Appointment Creation -->
+          <div class="form-section">
+            <h2 class="form-section-title">Appointment Creation</h2>
+
+            <div class="field-block">
+              <label class="field-label" for="counselorSelect">Counselor (Select Below) <span class="req">*</span></label>
+              <select id="counselorSelect" class="field-input" required>
+                <option value="">Loading guidance counselors...</option>
+              </select>
+            </div>
+
+            <div class="field-block">
+              <label class="field-label" for="appointmentDate">Consultation Date (Choose an available date) <span class="req">*</span></label>
+              <input type="date" id="appointmentDate" class="field-input" required />
+              <div class="field-hint" id="dateHint">Office hours: Monday to Saturday. Sundays closed.</div>
+            </div>
+
+            <div class="field-block" id="slotBlock" style="display:none;">
+              <label class="field-label">Available Consultation Time Slot <span class="req">*</span></label>
+              <div id="slotsLoading" class="slot-loading" style="display:none;">Checking counselor availability...</div>
+              <div id="slotsNotice" class="slot-notice" style="display:none;"></div>
+              <div id="slotsGrid" class="slots-pill-grid"></div>
+              <input type="hidden" id="selectedStartTime" required />
+              <input type="hidden" id="selectedEndTime" />
+            </div>
+          </div>
+
+          <div class="errorMessage" id="formError"></div>
+
+          <button type="submit" class="btn btn-dark btn-block btn-submit-appt" id="submitBtn">
+            Submit Appointment
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- User Screen 2: Confirmation Modal -->
+    <div class="modal-overlay" id="confirmationModal" style="display:none;">
+      <div class="confirmation-card">
+        <div class="conf-header">
+          <div class="conf-check-icon">✓</div>
+          <h2 class="conf-heading">Appointment Confirmed!</h2>
+        </div>
+
+        <div class="conf-details-box">
+          <div class="conf-row">
+            <span class="conf-lbl">Confirmation Number:</span>
+            <span class="conf-val conf-highlight" id="resConfirmationNumber">GCO-2026-00125</span>
+          </div>
+          <div class="conf-row">
+            <span class="conf-lbl">Counselor:</span>
+            <span class="conf-val" id="resCounselor">Ms. A. Reyes</span>
+          </div>
+          <div class="conf-row">
+            <span class="conf-lbl">Date:</span>
+            <span class="conf-val" id="resDate">September 10, 2026</span>
+          </div>
+          <div class="conf-row">
+            <span class="conf-lbl">Time:</span>
+            <span class="conf-val" id="resTime">09:00 AM – 09:30 AM</span>
+          </div>
+        </div>
+
+        <p class="conf-email-note">
+          A confirmation email containing consultation guidelines has been sent to your NU student email:
+          <br><strong id="resEmail"></strong>
+        </p>
+
+        <button type="button" class="btn btn-dark btn-block" id="closeModalBtn">Close</button>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/booking.js"></script>
+  </body>
 </html>

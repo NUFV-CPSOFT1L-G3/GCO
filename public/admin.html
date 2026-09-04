@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administrator Analytics & Monitoring — GCOunsel</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body>
+    <div class="app" id="app"></div>
+
+    <!-- Create Counselor Account Modal -->
+    <div class="modal-overlay" id="newCounselorModal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Create Counselor Account</h3>
+        <p class="modal-desc">Register a new authorized guidance counselor into GCOunsel.</p>
+
+        <form id="newCounselorForm">
+          <div class="field-block">
+            <label class="field-label" for="newCName">Full Name <span class="req">*</span></label>
+            <input type="text" id="newCName" class="field-input" placeholder="e.g. Ms. B. Santos" required />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCTitle">Title / Position</label>
+            <input type="text" id="newCTitle" class="field-input" placeholder="e.g. Guidance Counselor" value="Guidance Counselor" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCCredentials">Credentials</label>
+            <input type="text" id="newCCredentials" class="field-input" placeholder="e.g. MS, RGC, RPm" value="RGC" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCEmail">Institutional Email <span class="req">*</span></label>
+            <input type="email" id="newCEmail" class="field-input" placeholder="e.g. b.santos@school.edu.ph" required />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCPassword">Temporary Password <span class="req">*</span></label>
+            <input type="password" id="newCPassword" class="field-input" placeholder="At least 6 characters" minlength="6" required />
+          </div>
+
+          <div class="errorMessage" id="newCError"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" id="closeNewCModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-dark" id="submitNewCBtn">Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/nav.js"></script>
+    <script src="/js/admin.js"></script>
+  </body>
+</html>
