@@ -211,6 +211,10 @@ function formatDateDisplay(isoDate) {
 
                           const isActionable = appt.status === "confirmed";
 
+                          // No-Show will only appear after the scheduled appointment ends.
+                          const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
+                          const canMarkNoShow = isActionable && !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
+                          
                           return `
                             <div class="appt-card-row">
                               <div class="appt-time-col">
