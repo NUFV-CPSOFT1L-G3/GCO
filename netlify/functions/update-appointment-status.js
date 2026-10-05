@@ -52,7 +52,25 @@ exports.handler = async (event) => {
     }
 
     const apptData = apptDoc.data();
-
+    
+    // No-Show will only appear after the scheduled appointment ends
+    if (normalizedStatus === "no-show") {
+      const endTime = apptData.endTime || apptData.startTime;
+      const apptEnd = new Date(`${apptData.date}T${endTime}:00`);
+      if (isNaN(apptEnd.getTime())) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Appointment schedule is invalid; cannot determine No-Show eligibility." }),
+        };
+      }
+      if (apptEnd.getTime() > Date.now()) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "You can only mark an appointment as No-Show after the scheduled appointment has ended." }),
+        };
+      }
+    }
+    
     // Prepare update data
     const updateData = {
       status: normalizedStatus,
