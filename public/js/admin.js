@@ -20,7 +20,12 @@
     }
 
     try {
-      const res = await fetch(url);
+      const headers = {};
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        const idToken = await window.firebaseAuth.currentUser.getIdToken();
+        headers.Authorization = `Bearer ${idToken}`;
+      }
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error("Failed to load statistics.");
       statsData = await res.json();
     } catch (err) {
@@ -313,6 +318,8 @@
                               ? "badge-cancelled"
                               : "badge-upcoming";
 
+                          const isActionable = a.status === "confirmed";
+
                           return `
                             <tr>
                               <td><strong class="conf-tag-cell">${escapeHtml(a.confirmationNumber || a.id)}</strong></td>
@@ -325,6 +332,12 @@
                               <td>
                                 <span class="status-badge ${badgeClass}">${escapeHtml(a.status)}</span>
                                 ${a.cancellationReason ? `<br><small style="color:var(--danger); font-size:10px;">${escapeHtml(a.cancellationReason)}</small>` : ""}
+                                ${isActionable ? `
+                                  <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-sm btn-mark-complete-admin" data-id="${a.id}" title="Mark Completed">✓ Complete</button>
+                                    <button type="button" class="btn btn-sm btn-mark-noshow-admin" data-id="${a.id}" title="Mark No-Show">✕ No-Show</button>
+                                  </div>
+                                ` : ""}
                               </td>
                             </tr>
                           `;
@@ -405,6 +418,69 @@
         exportAppointmentsToCSV(statsData.appointments || []);
       });
     }
+
+    // Historical appointment status updates from admin monitoring table
+    document.querySelectorAll(".btn-mark-complete-admin").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Mark this consultation session as Completed? A post-consultation satisfaction survey will be sent to the student.")) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "...";
+
+        try {
+          const res = await fetch("/api/update-appointment-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: btn.dataset.id, status: "completed" }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to update appointment.");
+          }
+
+          await fetchStats();
+          renderAdmin();
+        } catch (err) {
+          alert(err.message);
+          btn.disabled = false;
+          btn.textContent = "✓ Complete";
+        }
+      });
+    });
+
+    document.querySelectorAll(".btn-mark-noshow-admin").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Mark this appointment as No-Show?")) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "...";
+
+        try {
+          const res = await fetch("/api/update-appointment-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: btn.dataset.id, status: "no-show" }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to update appointment.");
+          }
+
+          await fetchStats();
+          renderAdmin();
+        } catch (err) {
+          alert(err.message);
+          btn.disabled = false;
+          btn.textContent = "✕ No-Show";
+        }
+      });
+    });
 
     // New Counselor Modal
     const modal = document.getElementById("newCounselorModal");
