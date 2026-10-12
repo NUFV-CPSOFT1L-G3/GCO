@@ -4,15 +4,15 @@ exports.handler = async (event) => {
   const db = getDb();
   const auth = getAuth();
 
-  // 1. GET: List all counselors & their metrics
+  // 1. GET: List all counselors & their metrics (Deduplicated)
   if (event.httpMethod === "GET") {
     try {
       const snapshot = await db.collection("counselors").get();
-      const counselors = [];
+      const rawCounselors = [];
 
       snapshot.forEach((doc) => {
         const data = doc.data();
-        counselors.push({
+        rawCounselors.push({
           id: doc.id,
           name: data.name,
           email: data.email,
@@ -28,6 +28,34 @@ exports.handler = async (event) => {
           createdAt: data.createdAt || "",
         });
       });
+
+      // Strict in-memory deduplication by email
+      const counselors = [];
+      const seenEmails = new Set();
+      for (const c of rawCounselors) {
+        const normEmail = (c.email || "").toLowerCase().trim();
+        if (!normEmail) {
+          counselors.push(c);
+          continue;
+        }
+        if (seenEmails.has(normEmail)) {
+          const existingIndex = counselors.findIndex(
+            (item) => (item.email || "").toLowerCase().trim() === normEmail
+          );
+          if (existingIndex >= 0) {
+            const existing = counselors[existingIndex];
+            if (
+              (c.sessionsHandled || 0) > (existing.sessionsHandled || 0) ||
+              (!c.id.startsWith("counselor_") && existing.id.startsWith("counselor_"))
+            ) {
+              counselors[existingIndex] = c;
+            }
+          }
+          continue;
+        }
+        seenEmails.add(normEmail);
+        counselors.push(c);
+      }
 
       return {
         statusCode: 200,
@@ -55,6 +83,23 @@ exports.handler = async (event) => {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
+
+      // Check if counselor already exists in Firestore by email
+      try {
+        const existingEmailDocs = await db
+          .collection("counselors")
+          .where("email", "==", normalizedEmail)
+          .get();
+
+        if (!existingEmailDocs.empty) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "An account with this email address already exists." }),
+          };
+        }
+      } catch (queryErr) {
+        // Continue if where query unsupported by mock
+      }
 
       // Create in Firebase Auth
       let userRecord;
@@ -104,6 +149,16 @@ exports.handler = async (event) => {
 
       await db.collection("counselors").doc(userRecord.uid).set(counselorProfile);
 
+      // Self-healing cleanup: delete any orphaned legacy documents with the same email
+      try {
+        const cleanupSnap = await db.collection("counselors").where("email", "==", normalizedEmail).get();
+        cleanupSnap.forEach(async (doc) => {
+          if (doc.id !== userRecord.uid) {
+            await db.collection("counselors").doc(doc.id).delete();
+          }
+        });
+      } catch (cleanupErr) {}
+
       return {
         statusCode: 201,
         headers: { "Content-Type": "application/json" },
@@ -124,12 +179,14 @@ exports.handler = async (event) => {
       }
 
       // Root administrator protection
+      let targetEmail = "";
       const counselorDoc = await db.collection("counselors").doc(counselorId).get();
       if (counselorDoc.exists) {
         const data = counselorDoc.data();
+        targetEmail = (data.email || "").toLowerCase().trim();
         if (
-          data.email === "kylecarandang.work@gmail.com" ||
-          data.email === "kyle.carandang@nu-fairview.edu.ph"
+          targetEmail === "kylecarandang.work@gmail.com" ||
+          targetEmail === "kyle.carandang@nu-fairview.edu.ph"
         ) {
           return {
             statusCode: 403,
@@ -138,12 +195,35 @@ exports.handler = async (event) => {
         }
       }
 
+      // Delete target doc
       await db.collection("counselors").doc(counselorId).delete();
 
+      // If email exists, delete ANY duplicate docs in Firestore with this email
+      if (targetEmail) {
+        try {
+          const matchingDocs = await db.collection("counselors").where("email", "==", targetEmail).get();
+          matchingDocs.forEach(async (doc) => {
+            await db.collection("counselors").doc(doc.id).delete();
+          });
+        } catch (delErr) {}
+      }
+
+      // Delete from Firebase Auth
+      let deletedFromAuth = false;
       try {
         await auth.deleteUser(counselorId);
+        deletedFromAuth = true;
       } catch (authErr) {
-        // User might not exist in Auth (e.g. mock or manual doc)
+        // counselorId might not be the Auth UID
+      }
+
+      if (!deletedFromAuth && targetEmail && typeof auth.getUserByEmail === "function") {
+        try {
+          const authUser = await auth.getUserByEmail(targetEmail);
+          if (authUser && authUser.uid) {
+            await auth.deleteUser(authUser.uid);
+          }
+        } catch (e) {}
       }
 
       return {

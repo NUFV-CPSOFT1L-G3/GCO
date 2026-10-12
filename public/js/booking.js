@@ -64,8 +64,26 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       } catch (e) {}
 
-      // Filter to only active staff with counseling duties
-      const activeCounselors = counselors.filter((c) => c.status !== "inactive");
+      // Filter to only active staff with counseling duties and deduplicate by email
+      const activeCounselors = [];
+      const seenEmails = new Set();
+      counselors.forEach((c) => {
+        if (c.status === "inactive") return;
+        const normEmail = (c.email || "").toLowerCase().trim();
+        if (!normEmail) {
+          activeCounselors.push(c);
+          return;
+        }
+        if (seenEmails.has(normEmail)) {
+          const idx = activeCounselors.findIndex((x) => (x.email || "").toLowerCase().trim() === normEmail);
+          if (idx >= 0 && (!c.id.startsWith("counselor_") && activeCounselors[idx].id.startsWith("counselor_"))) {
+            activeCounselors[idx] = c;
+          }
+          return;
+        }
+        seenEmails.add(normEmail);
+        activeCounselors.push(c);
+      });
 
       if (!activeCounselors.length) {
         counselorSelect.innerHTML = `<option value="">No counselors currently available</option>`;

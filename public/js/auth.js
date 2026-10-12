@@ -35,8 +35,14 @@ async function getCurrentUser() {
                 .limit(1)
                 .get();
               if (!query.empty) {
-                profile = query.docs[0].data();
+                const oldDoc = query.docs[0];
+                profile = oldDoc.data();
                 await window.firestoreDb.collection("counselors").doc(user.uid).set({ ...profile, id: user.uid }, { merge: true });
+                if (oldDoc.id !== user.uid) {
+                  try {
+                    await window.firestoreDb.collection("counselors").doc(oldDoc.id).delete();
+                  } catch (delOldErr) {}
+                }
               }
             } catch (queryErr) {
               console.warn("Email profile query note:", queryErr.message);

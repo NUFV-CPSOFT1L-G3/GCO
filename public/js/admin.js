@@ -18,27 +18,27 @@
   async function fetchCounselors() {
     let list = [];
 
-    // Try reading directly from Firestore if available
+    // 1. Try reading from Netlify function API first (canonical serverless authority)
     try {
-      if (window.firestoreDb) {
-        const snap = await window.firestoreDb.collection("counselors").get();
-        snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      const res = await fetch("/api/admin-counselors");
+      if (res.ok) {
+        list = await res.json();
       }
     } catch (e) {
-      console.warn("Direct Firestore counselor read notice:", e);
+      console.warn("API counselor read notice:", e);
     }
 
-    // Fallback to Netlify function endpoint
-    if (!list.length) {
+    // 2. Direct Firestore fallback if API not reachable
+    if (!list.length && window.firestoreDb) {
       try {
-        const res = await fetch("/api/admin-counselors");
-        if (res.ok) list = await res.json();
+        const snap = await window.firestoreDb.collection("counselors").get();
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
       } catch (e) {
-        console.warn("API counselor read notice:", e);
+        console.warn("Direct Firestore counselor read notice:", e);
       }
     }
 
-    // Merge locally registered accounts (client-side persistence & offline fallback)
+    // 3. Merge locally registered accounts (client-side offline fallback)
     try {
       const localList = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
       localList.forEach((lc) => {
@@ -80,7 +80,30 @@
       ];
     }
 
-    counselorsList = list;
+    // Strict in-memory deduplication by normalized email
+    const deduped = [];
+    const seenEmails = new Set();
+    for (const c of list) {
+      const emailKey = (c.email || "").toLowerCase().trim();
+      if (!emailKey) {
+        deduped.push(c);
+        continue;
+      }
+      if (seenEmails.has(emailKey)) {
+        const existingIdx = deduped.findIndex((x) => (x.email || "").toLowerCase().trim() === emailKey);
+        if (existingIdx >= 0) {
+          const ex = deduped[existingIdx];
+          if ((c.sessionsHandled || 0) > (ex.sessionsHandled || 0) || (!c.id.startsWith("counselor_") && ex.id.startsWith("counselor_"))) {
+            deduped[existingIdx] = c;
+          }
+        }
+        continue;
+      }
+      seenEmails.add(emailKey);
+      deduped.push(c);
+    }
+
+    counselorsList = deduped;
   }
 
   async function fetchStats() {
@@ -724,8 +747,9 @@
         submitBtn.textContent = "Provisioning...";
 
         try {
-          // Attempt creation via API
+          // Attempt creation via API (single source of truth for Auth + Firestore)
           let createdViaApi = false;
+          let createdCounselor = null;
           try {
             const res = await fetch("/api/admin-counselors", {
               method: "POST",
@@ -744,7 +768,8 @@
             const data = await res.json();
             if (res.ok) {
               createdViaApi = true;
-            } else if (data.error && data.error.toLowerCase().includes("already exists")) {
+              createdCounselor = data.counselor;
+            } else if (data.error) {
               throw new Error(data.error);
             }
           } catch (apiErr) {
@@ -754,25 +779,27 @@
             console.warn("API provisioning notice (falling back to client storage):", apiErr.message);
           }
 
-          // Direct Firestore write if available
-          const newId = "counselor_" + Date.now();
-          if (window.firestoreDb) {
-            try {
-              await window.firestoreDb.collection("counselors").doc(newId).set({
-                id: newId,
-                name,
-                title,
-                credentials,
-                email,
-                role,
-                preferredAreas: selectedAreas,
-                status: "active",
-                sessionsHandled: 0,
-                sessionsCompleted: 0,
-                createdAt: new Date().toISOString(),
-              });
-            } catch (fsErr) {
-              console.warn("Firestore direct write notice:", fsErr.message);
+          // ONLY fallback to direct Firestore write if the serverless API was unreachable
+          if (!createdViaApi) {
+            const newId = "counselor_" + Date.now();
+            if (window.firestoreDb) {
+              try {
+                await window.firestoreDb.collection("counselors").doc(newId).set({
+                  id: newId,
+                  name,
+                  title,
+                  credentials,
+                  email,
+                  role,
+                  preferredAreas: selectedAreas,
+                  status: "active",
+                  sessionsHandled: 0,
+                  sessionsCompleted: 0,
+                  createdAt: new Date().toISOString(),
+                });
+              } catch (fsErr) {
+                console.warn("Firestore direct write notice:", fsErr.message);
+              }
             }
           }
 
@@ -780,8 +807,8 @@
           try {
             const registeredAccounts = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
             const existingIndex = registeredAccounts.findIndex((acc) => acc.email.toLowerCase() === email);
-            const accountRecord = {
-              id: newId,
+            const accountRecord = createdCounselor || {
+              id: "counselor_" + Date.now(),
               name,
               title,
               credentials,
@@ -827,6 +854,9 @@
         }
 
         try {
+          const targetCounselor = counselorsList.find((c) => c.id === cId);
+          const targetEmail = targetCounselor ? (targetCounselor.email || "").toLowerCase() : "";
+
           // Attempt DELETE via API
           try {
             await fetch("/api/admin-counselors", {
@@ -842,6 +872,12 @@
           if (window.firestoreDb) {
             try {
               await window.firestoreDb.collection("counselors").doc(cId).delete();
+              if (targetEmail) {
+                const matchSnap = await window.firestoreDb.collection("counselors").where("email", "==", targetEmail).get();
+                matchSnap.forEach(async (d) => {
+                  await window.firestoreDb.collection("counselors").doc(d.id).delete();
+                });
+              }
             } catch (fsErr) {
               console.warn("Firestore delete notice:", fsErr);
             }
@@ -850,7 +886,7 @@
           // Local storage delete
           try {
             let registered = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
-            registered = registered.filter((c) => c.id !== cId);
+            registered = registered.filter((c) => c.id !== cId && (targetEmail ? (c.email || "").toLowerCase() !== targetEmail : true));
             localStorage.setItem("gcounsel_registered_counselors", JSON.stringify(registered));
           } catch (e) {}
 

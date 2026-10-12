@@ -11,12 +11,16 @@
  * 8. Administrator statistics and category/program analytics
  */
 
+process.env.USE_LOCAL_FALLBACK = "true";
+process.env.NODE_ENV = "test";
+
 const assert = require("assert");
 const bookAppointmentFn = require("../netlify/functions/book-appointment").handler;
 const getAvailabilityFn = require("../netlify/functions/get-availability").handler;
 const updateStatusFn = require("../netlify/functions/update-appointment-status").handler;
 const submitFeedbackFn = require("../netlify/functions/submit-feedback").handler;
 const adminStatsFn = require("../netlify/functions/admin-stats").handler;
+const adminCounselorsFn = require("../netlify/functions/admin-counselors").handler;
 
 async function runTests() {
   console.log("==================================================================");
@@ -274,8 +278,38 @@ async function runTests() {
   console.log("✓ Programs recorded:", Object.keys(adminData.courses).join(", "));
   console.log("✓ TEST 8 PASSED: Admin analytics computed correctly.");
 
+  // -------------------------------------------------------------------------
+  // TEST 9: Staff Scalability, Deduplication & Duplicate Email Prevention
+  // -------------------------------------------------------------------------
+  console.log("\nTEST 9: Staff counselor account deduplication & duplicate email rejection...");
+
+  // 1. Fetch counselors list - must be unique by email
+  const cListRes = await adminCounselorsFn({ httpMethod: "GET" });
+  assert.strictEqual(cListRes.statusCode, 200);
+  const counselorList = JSON.parse(cListRes.body);
+  const counselorEmails = counselorList.map((c) => (c.email || "").toLowerCase());
+  const uniqueEmails = new Set(counselorEmails);
+  assert.strictEqual(counselorEmails.length, uniqueEmails.size, "Counselor roster must not contain duplicate emails");
+
+  // 2. Provisioning an existing email must be rejected with 400
+  if (counselorList.length > 0) {
+    const existingEmail = counselorList[0].email;
+    const dupRes = await adminCounselorsFn({
+      httpMethod: "POST",
+      body: JSON.stringify({
+        name: "Duplicate Test Staff",
+        email: existingEmail,
+        password: "securePassword123",
+      }),
+    });
+    assert.strictEqual(dupRes.statusCode, 400, "Should reject provisioning duplicate staff email");
+    assert(JSON.parse(dupRes.body).error.includes("already exists"), "Error message should cite existing account");
+  }
+
+  console.log("✓ TEST 9 PASSED: Account deduplication and duplicate rejection verified.");
+
   console.log("\n==================================================================");
-  console.log(" 🎉 ALL TESTS PASSED SUCCESSFULLY! (8/8)");
+  console.log(" 🎉 ALL TESTS PASSED SUCCESSFULLY! (9/9)");
   console.log("==================================================================");
 }
 

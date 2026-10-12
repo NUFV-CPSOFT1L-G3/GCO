@@ -4,26 +4,33 @@ const os = require("os");
 const admin = require("firebase-admin");
 
 // Automatically load .env file if present
-const envPath = path.join(__dirname, "..", "..", ".env");
-if (fs.existsSync(envPath)) {
-  try {
-    if (typeof process.loadEnvFile === "function") {
-      process.loadEnvFile(envPath);
-    } else {
-      const envContent = fs.readFileSync(envPath, "utf8");
-      envContent.split("\n").forEach((line) => {
-        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match) {
-          const key = match[1];
-          let val = (match[2] || "").trim();
-          if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-          if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
-          if (!process.env[key]) process.env[key] = val;
-        }
-      });
+const candidateEnvPaths = [
+  path.join(__dirname, "..", "..", "..", ".env"),
+  path.join(__dirname, "..", "..", ".env"),
+  path.resolve(process.cwd(), ".env"),
+];
+for (const envPath of candidateEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    try {
+      if (typeof process.loadEnvFile === "function") {
+        process.loadEnvFile(envPath);
+      } else {
+        const envContent = fs.readFileSync(envPath, "utf8");
+        envContent.split("\n").forEach((line) => {
+          const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+          if (match) {
+            const key = match[1];
+            let val = (match[2] || "").trim();
+            if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+            if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+            if (!process.env[key]) process.env[key] = val;
+          }
+        });
+      }
+      break;
+    } catch (e) {
+      console.warn("Notice: could not load .env file:", e.message);
     }
-  } catch (e) {
-    console.warn("Notice: could not load .env file:", e.message);
   }
 }
 
@@ -197,6 +204,12 @@ class LocalFirestoreMock {
 
 function initFirebaseAdmin() {
   if (initialized) return admin;
+
+  if (process.env.USE_LOCAL_FALLBACK === "true" || process.env.NODE_ENV === "test") {
+    useLocalFallback = true;
+    initialized = true;
+    return admin;
+  }
 
   const hasCredentials =
     Boolean(process.env.FIREBASE_SERVICE_ACCOUNT) ||
