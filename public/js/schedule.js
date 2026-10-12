@@ -38,37 +38,21 @@ function formatTime12h(time24) {
     const startStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
     const endStr = `${year}-${String(month + 1).padStart(2, "0")}-31`;
 
-    if (window.firestoreDb) {
-      try {
-        const snap = await window.firestoreDb
-          .collection("appointments")
-          .where("counselorId", "==", user.uid || user.id)
-          .where("date", ">=", startStr)
-          .where("date", "<=", endStr)
-          .get();
-
-        snap.forEach((doc) => appointments.push({ id: doc.id, ...doc.data() }));
-      } catch (err) {
-        console.warn("Direct appt fetch error:", err);
+    try {
+      const headers = {};
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        const idToken = await window.firebaseAuth.currentUser.getIdToken();
+        headers.Authorization = `Bearer ${idToken}`;
       }
-    }
-
-    if (!appointments.length) {
-      try {
-        const res = await fetch("/api/admin-stats");
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = (data.appointments || []).filter(
-            (a) =>
-              (a.counselorId === (user.uid || user.id) || a.counselorName === user.name) &&
-              a.date >= startStr &&
-              a.date <= endStr
-          );
-          appointments.push(...filtered);
-        }
-      } catch (e) {
-        console.error(e);
+      const query = new URLSearchParams({ startDate: startStr, endDate: endStr });
+      if (!window.firebaseAuth) query.set("counselorId", user.uid || user.id || "");
+      const res = await fetch(`/api/counselor-stats?${query.toString()}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        appointments.push(...(data.appointments || []));
       }
+    } catch (e) {
+      console.error(e);
     }
 
     return appointments;
@@ -241,13 +225,22 @@ function formatTime12h(time24) {
       const appt = apptMap[time24];
 
       if (appt) {
+        const statusLabel = appt.status === "completed" ? "Completed" : appt.status === "no-show" ? "No-Show" : appt.status === "cancelled" ? "Cancelled" : "Confirmed";
+        const isActionable = appt.status === "confirmed";
+
         rows.push(`
           <div class="daily-slot-row slot-booked">
             <div class="slot-time-lbl">${formatTime12h(time24)} – ${formatTime12h(endTime24)}</div>
             <div class="slot-status-lbl">
-              <span class="status-badge badge-appointment">Appointment</span>
+              <span class="status-badge badge-appointment">${statusLabel}</span>
               <strong class="slot-student-title">${escapeHtml(appt.studentName)}</strong>
               <span class="slot-meta-desc">(${escapeHtml(appt.course || "")} · ${escapeHtml(Array.isArray(appt.categories) ? appt.categories.join(", ") : appt.categories || "")})</span>
+              ${isActionable ? `
+                <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-sm btn-mark-complete-schedule" data-id="${appt.id}" title="Mark Complete">✓ Complete</button>
+                  <button type="button" class="btn btn-sm btn-mark-noshow-schedule" data-id="${appt.id}" title="Mark No-Show">✕ No-Show</button>
+                </div>
+              ` : ""}
             </div>
           </div>
         `);
@@ -283,6 +276,66 @@ function formatTime12h(time24) {
         const iso = cell.dataset.iso;
         selectedDate = new Date(iso + "T00:00:00");
         renderScreen();
+      });
+    });
+
+    document.querySelectorAll(".btn-mark-complete-schedule").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Mark this consultation session as Completed? A post-consultation satisfaction survey will be sent to the student.")) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "...";
+
+        try {
+          const res = await fetch("/api/update-appointment-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: btn.dataset.id, status: "completed" }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to update appointment.");
+          }
+
+          renderScreen();
+        } catch (err) {
+          alert(err.message);
+          btn.disabled = false;
+          btn.textContent = "✓ Complete";
+        }
+      });
+    });
+
+    document.querySelectorAll(".btn-mark-noshow-schedule").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Mark this appointment as No-Show?")) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "...";
+
+        try {
+          const res = await fetch("/api/update-appointment-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: btn.dataset.id, status: "no-show" }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to update appointment.");
+          }
+
+          renderScreen();
+        } catch (err) {
+          alert(err.message);
+          btn.disabled = false;
+          btn.textContent = "✕ No-Show";
+        }
       });
     });
   }
