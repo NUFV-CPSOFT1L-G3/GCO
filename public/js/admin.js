@@ -38,16 +38,14 @@
       }
     }
 
-    // 3. Merge locally registered accounts (client-side offline fallback)
-    try {
-      const localList = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
-      localList.forEach((lc) => {
-        if (!list.some((c) => (c.email || "").toLowerCase() === (lc.email || "").toLowerCase() || c.id === lc.id)) {
-          list.push(lc);
-        }
-      });
-    } catch (e) {
-      console.warn("Local storage counselor read notice:", e);
+    // 3. Fallback to locally registered accounts ONLY if server and Firestore have no accounts (offline demo mode)
+    if (!list.length) {
+      try {
+        const localList = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
+        list = localList;
+      } catch (e) {
+        console.warn("Local storage counselor read notice:", e);
+      }
     }
 
     // Default seeded staff if still empty
@@ -705,21 +703,23 @@
     };
 
     if (openBtn && modal) {
-      openBtn.addEventListener("click", openModalHandler);
+      openBtn.onclick = openModalHandler;
     }
     if (innerAddBtn && modal) {
-      innerAddBtn.addEventListener("click", openModalHandler);
+      innerAddBtn.onclick = openModalHandler;
     }
 
     if (closeBtn && modal) {
-      closeBtn.addEventListener("click", () => {
+      closeBtn.onclick = () => {
         modal.style.display = "none";
-      });
+      };
     }
 
     if (form) {
-      form.addEventListener("submit", async (e) => {
+      form.onsubmit = async (e) => {
         e.preventDefault();
+        if (form.dataset.submitting === "true") return;
+        form.dataset.submitting = "true";
         errorBox.textContent = "";
 
         const role = (document.getElementById("newCRole") ? document.getElementById("newCRole").value : "counselor");
@@ -735,11 +735,13 @@
 
         if (!name || !email || !password) {
           errorBox.textContent = "Please fill in all required fields.";
+          form.dataset.submitting = "false";
           return;
         }
 
         if (password.length < 6) {
           errorBox.textContent = "Password must be at least 6 characters.";
+          form.dataset.submitting = "false";
           return;
         }
 
@@ -747,9 +749,8 @@
         submitBtn.textContent = "Provisioning...";
 
         try {
-          // Attempt creation via API (single source of truth for Auth + Firestore)
+          // Attempt creation via API (single authoritative source of truth for Auth + Firestore)
           let createdViaApi = false;
-          let createdCounselor = null;
           try {
             const res = await fetch("/api/admin-counselors", {
               method: "POST",
@@ -768,7 +769,6 @@
             const data = await res.json();
             if (res.ok) {
               createdViaApi = true;
-              createdCounselor = data.counselor;
             } else if (data.error) {
               throw new Error(data.error);
             }
@@ -803,32 +803,10 @@
             }
           }
 
-          // Save to local registered list for client persistence / offline fallback
+          // Clear any stale local mock cache to ensure clean roster
           try {
-            const registeredAccounts = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
-            const existingIndex = registeredAccounts.findIndex((acc) => acc.email.toLowerCase() === email);
-            const accountRecord = createdCounselor || {
-              id: "counselor_" + Date.now(),
-              name,
-              title,
-              credentials,
-              email,
-              role,
-              preferredAreas: selectedAreas,
-              status: "active",
-              sessionsHandled: 0,
-              sessionsCompleted: 0,
-            };
-
-            if (existingIndex >= 0) {
-              registeredAccounts[existingIndex] = accountRecord;
-            } else {
-              registeredAccounts.push(accountRecord);
-            }
-            localStorage.setItem("gcounsel_registered_counselors", JSON.stringify(registeredAccounts));
-          } catch (localErr) {
-            console.warn("Local storage cache notice:", localErr);
-          }
+            localStorage.removeItem("gcounsel_registered_counselors");
+          } catch (localErr) {}
 
           modal.style.display = "none";
           alert(`Staff account for ${name} (${role === "admin" ? "Administrator" : "Guidance Counselor"}) provisioned successfully.`);
@@ -837,10 +815,11 @@
         } catch (err) {
           errorBox.textContent = err.message || "Failed to provision account.";
         } finally {
+          form.dataset.submitting = "false";
           submitBtn.disabled = false;
           submitBtn.textContent = "Provision Account";
         }
-      });
+      };
     }
 
     // Counselor deletion buttons

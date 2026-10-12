@@ -54,15 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Merge locally registered counselors for offline / immediate demo synchronization
-      try {
-        const localCounselors = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
-        localCounselors.forEach((lc) => {
-          if (!counselors.some((c) => (c.email || "").toLowerCase() === (lc.email || "").toLowerCase() || c.id === lc.id)) {
-            counselors.push(lc);
-          }
-        });
-      } catch (e) {}
+      // Fallback to locally registered counselors only in offline demo mode if server returned none
+      if (!counselors.length) {
+        try {
+          const localCounselors = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
+          counselors = localCounselors;
+        } catch (e) {}
+      }
 
       // Filter to only active staff with counseling duties and deduplicate by email
       const activeCounselors = [];
