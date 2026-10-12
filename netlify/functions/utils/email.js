@@ -3,8 +3,8 @@ const nodemailer = require("nodemailer");
 function createTransporter() {
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : null;
+  const pass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, "") : null;
   const secure = process.env.SMTP_SECURE === "true" || port === 465;
 
   if (user && pass) {
@@ -13,6 +13,9 @@ function createTransporter() {
       return nodemailer.createTransport({
         service: "gmail",
         auth: { user, pass },
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
     }
 
@@ -22,6 +25,9 @@ function createTransporter() {
         port,
         secure,
         auth: { user, pass },
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
     }
   }
@@ -32,12 +38,13 @@ function createTransporter() {
 
 const DEFAULT_FROM = process.env.FROM_EMAIL || '"NU Fairview Guidance Counseling Office" <nufvgcounsel@gmail.com>';
 
-async function sendEmail({ to, subject, html, text }) {
+async function sendEmail({ to, bcc, subject, html, text }) {
   const transporter = createTransporter();
 
   if (!transporter) {
     console.log("==================== [MOCK EMAIL DISPATCH] ====================");
     console.log(`To:      ${to}`);
+    if (bcc) console.log(`Bcc:     ${bcc}`);
     console.log(`Subject: ${subject}`);
     console.log(`Content:\n${text || html}`);
     console.log("================================================================");
@@ -45,24 +52,29 @@ async function sendEmail({ to, subject, html, text }) {
   }
 
   try {
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: DEFAULT_FROM,
       to,
       subject,
       text,
       html,
-    });
-    console.log(`Email dispatched to ${to}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    };
+    if (bcc) {
+      mailOptions.bcc = bcc;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Email dispatched to ${to} (Bcc: ${bcc || "none"}): ${info.messageId}`);
+    return { success: true, messageId: info.messageId, recipient: to, bcc: bcc || null };
   } catch (error) {
     console.error(`Failed to send email to ${to}:`, error.message);
-    // Don't crash calling process; return error status
     return { success: false, error: error.message };
   }
 }
 
 /**
  * Sends Appointment Confirmation Email with Consultation Guidelines
+ * Automatically copies (BCCs) the office email so staff inbox receives an instant booking record
  */
 async function sendAppointmentConfirmation({
   studentEmail,
@@ -172,7 +184,10 @@ Guidelines:
 - Sessions are strictly confidential under RA 9258 and RA 10173.
   `.trim();
 
-  return sendEmail({ to: studentEmail, subject, html, text });
+  const officeEmail = process.env.SMTP_USER || "nufvgcounsel@gmail.com";
+  const bcc = officeEmail.toLowerCase() !== studentEmail.toLowerCase() ? officeEmail : undefined;
+
+  return sendEmail({ to: studentEmail, bcc, subject, html, text });
 }
 
 /**
@@ -218,7 +233,7 @@ async function sendAppointmentCancellation({
             ${reason}${remarks ? `<br><em>Remarks: ${remarks}</em>` : ""}
           </div>
 
-          <p>You may visit GCOunsel to schedule a new consultation at your convenience.</p>
+          <p>If you would like to reschedule, please visit the <a href="https://nufairview-guidance.cordanya.com">GCOunsel Portal</a> to select a new available time slot.</p>
         </div>
         <div class="footer">
           Guidance Counseling Office · National University – Fairview
@@ -233,12 +248,15 @@ Notice of Cancellation - ${confirmationNumber}
 
 Dear ${studentName},
 Your appointment (${confirmationNumber}) on ${date} at ${startTime} has been cancelled.
-Reason: ${reason} ${remarks ? `(${remarks})` : ""}
+Reason: ${reason}${remarks ? ` (${remarks})` : ""}
 
 You may schedule a new consultation on GCOunsel at your convenience.
   `.trim();
 
-  return sendEmail({ to: studentEmail, subject, html, text });
+  const officeEmail = process.env.SMTP_USER || "nufvgcounsel@gmail.com";
+  const bcc = officeEmail.toLowerCase() !== studentEmail.toLowerCase() ? officeEmail : undefined;
+
+  return sendEmail({ to: studentEmail, bcc, subject, html, text });
 }
 
 /**

@@ -65,9 +65,11 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "Please select an appointment date and time." }) };
     }
 
-    // Auto-generate full institutional email
-    const cleanUsername = emailUsername.trim().replace(/@.*$/, "").toLowerCase();
-    const fullStudentEmail = `${cleanUsername}@students.nu-fairview.edu.ph`;
+    // Auto-generate full institutional email or preserve direct email if specified
+    const rawEmailInput = (emailUsername || "").trim();
+    const fullStudentEmail = rawEmailInput.includes("@")
+      ? rawEmailInput.toLowerCase()
+      : `${rawEmailInput.replace(/@.*$/, "").toLowerCase()}@students.nu-fairview.edu.ph`;
     const cleanStudentId = studentId.trim();
     const cleanFullName = fullName.trim();
     const todayISO = getTodayISO();
@@ -209,23 +211,30 @@ exports.handler = async (event) => {
       transaction.update(counselorRef, { sessionsHandled: currentHandled + 1 });
     });
 
-    // 5. Send Confirmation Email
-    await sendAppointmentConfirmation({
-      studentEmail: fullStudentEmail,
-      studentName: cleanFullName,
-      confirmationNumber,
-      counselorName: counselorData.name,
-      date,
-      startTime,
-      endTime: calculatedEndTime,
-      categories,
-    });
+    // 5. Send Confirmation Email (Student + Office BCC)
+    let emailStatus = { success: false };
+    try {
+      emailStatus = await sendAppointmentConfirmation({
+        studentEmail: fullStudentEmail,
+        studentName: cleanFullName,
+        confirmationNumber,
+        counselorName: counselorData.name,
+        date,
+        startTime,
+        endTime: calculatedEndTime,
+        categories,
+      });
+    } catch (emailErr) {
+      console.error("sendAppointmentConfirmation notice:", emailErr.message);
+      emailStatus = { success: false, error: emailErr.message };
+    }
 
     return {
       statusCode: 201,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         success: true,
+        emailStatus,
         appointment: {
           id: appointmentId,
           confirmationNumber,
