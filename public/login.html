@@ -41,22 +41,26 @@
           <span>OR SIGN IN WITH PASSWORD</span>
         </div>
 
-        <form id="loginForm" class="auth-form">
+        <form id="loginForm" class="auth-form" novalidate>
           <div class="field-block">
-            <label class="field-label" for="email">Email / Username</label>
+            <label class="field-label" for="email">Email / Username <span class="req">*</span></label>
             <input class="field-input" type="email" id="email" required autocomplete="username" placeholder="e.g. counselor@nu-fairview.edu.ph" />
           </div>
 
           <div class="field-block">
-            <label class="field-label" for="password">Password</label>
+            <label class="field-label" for="password">Password <span class="req">*</span></label>
             <div class="password-wrap">
-              <input class="field-input" type="password" id="password" required autocomplete="current-password" placeholder="••••••••" />
+              <input class="field-input" type="password" id="password" minlength="6" required autocomplete="current-password" placeholder="••••••••" />
               <button type="button" class="toggle-password" aria-label="Show password">Show</button>
             </div>
           </div>
 
           <button type="submit" class="btn btn-dark auth-button" id="loginSubmitBtn">Log In</button>
           <div class="errorMessage" id="errorMsg"></div>
+
+          <div class="auth-footer" style="text-align: center; margin-top: 18px; font-size: 13px; color: var(--color-muted);">
+            Don't have a staff account? <a href="/signup.html" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Sign up here</a>
+          </div>
         </form>
       </div>
     </div>

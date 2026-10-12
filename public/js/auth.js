@@ -3,11 +3,16 @@
  */
 
 async function getCurrentUser() {
+  const cached = localStorage.getItem("gcounsel_session");
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (e) {}
+  }
+
   return new Promise((resolve) => {
     if (!window.firebaseAuth) {
-      // Fallback if running with mock session in local storage
-      const cached = localStorage.getItem("gcounsel_session");
-      return resolve(cached ? JSON.parse(cached) : null);
+      return resolve(null);
     }
 
     const unsubscribe = window.firebaseAuth.onAuthStateChanged(async (user) => {

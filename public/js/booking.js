@@ -54,14 +54,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      if (!counselors.length) {
+      // Merge locally registered counselors for offline / immediate demo synchronization
+      try {
+        const localCounselors = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
+        localCounselors.forEach((lc) => {
+          if (!counselors.some((c) => (c.email || "").toLowerCase() === (lc.email || "").toLowerCase() || c.id === lc.id)) {
+            counselors.push(lc);
+          }
+        });
+      } catch (e) {}
+
+      // Filter to only active staff with counseling duties
+      const activeCounselors = counselors.filter((c) => c.status !== "inactive");
+
+      if (!activeCounselors.length) {
         counselorSelect.innerHTML = `<option value="">No counselors currently available</option>`;
         return;
       }
 
       counselorSelect.innerHTML = `
         <option value="">-- Choose a guidance counselor --</option>
-        ${counselors
+        ${activeCounselors
           .map(
             (c) =>
               `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} (${escapeHtml(c.title || "Guidance Counselor")})</option>`
@@ -143,10 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
   counselorSelect.addEventListener("change", loadAvailableSlots);
   appointmentDate.addEventListener("change", loadAvailableSlots);
 
+  const formErrorTop = document.getElementById("formErrorTop");
+
+  function setFormError(msg) {
+    if (formError) formError.textContent = msg;
+    if (formErrorTop) formErrorTop.textContent = msg;
+  }
+
   // 3. Form Submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    formError.textContent = "";
+    setFormError("");
 
     const fullName = document.getElementById("fullName").value.trim();
     const studentId = document.getElementById("studentId").value.trim();
@@ -164,42 +184,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Validation
     if (!fullName) {
-      formError.textContent = "Please enter your Full Name.";
+      setFormError("Please enter your Full Name.");
       return;
     }
 
     if (!/^\d{4}-\d{6}$/.test(studentId)) {
-      formError.textContent = "Student ID must follow the format: 20XX-XXXXXX (e.g. 2024-123456).";
+      setFormError("Student ID must follow the format: 20XX-XXXXXX (e.g. 2024-123456).");
       return;
     }
 
     if (!emailUsername) {
-      formError.textContent = "Please enter your NU institutional email username.";
+      setFormError("Please enter your NU institutional email username.");
       return;
     }
 
     if (!course) {
-      formError.textContent = "Please select your course or program.";
+      setFormError("Please select your course or program.");
       return;
     }
 
     if (checkedCategories.length === 0) {
-      formError.textContent = "Please select at least one reason for consultation.";
+      setFormError("Please select at least one reason for consultation.");
       return;
     }
 
     if (!counselorId) {
-      formError.textContent = "Please select a guidance counselor.";
+      setFormError("Please select a guidance counselor.");
       return;
     }
 
     if (!date) {
-      formError.textContent = "Please select a consultation date.";
+      setFormError("Please select a consultation date.");
       return;
     }
 
     if (!startTime) {
-      formError.textContent = "Please select an available consultation time slot.";
+      setFormError("Please select an available consultation time slot.");
       return;
     }
 

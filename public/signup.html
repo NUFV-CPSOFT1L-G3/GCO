@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Counselor Sign-up — GCOunsel</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body class="auth-body">
+    <header class="mainHeader">
+      <div class="headerLeft">
+        <div class="brandName">GCOunsel</div>
+      </div>
+      <div class="headerRight">
+        <a href="/login.html" class="nav-portal-link">← Back to Staff Login</a>
+      </div>
+    </header>
+
+    <div class="auth-shell">
+      <div class="auth-panel" style="max-width: 480px;">
+        <div class="auth-brand">GCOunsel</div>
+        <div class="auth-subtitle">Guidance Counseling Appointment Management</div>
+
+        <div class="auth-access-title">Counselor Registration</div>
+        <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 20px;">
+          Create an authorized guidance counselor account to manage appointments and consultations.
+        </p>
+
+        <form id="signupForm" class="auth-form" novalidate>
+          <div class="errorMessage" id="errorMsg" style="margin-bottom: 14px;"></div>
+          <div class="successMessage" id="successMsg" style="display:none; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 13px; text-align: center;"></div>
+
+          <div class="field-block">
+            <label class="field-label" for="fullname">Full Name <span class="req">*</span></label>
+            <input
+              class="field-input"
+              type="text"
+              id="fullname"
+              name="fullname"
+              required
+              placeholder="e.g. Maria Santos"
+            />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="email">Institutional Email <span class="req">*</span></label>
+            <input
+              class="field-input"
+              type="email"
+              id="email"
+              name="email"
+              required
+              autocomplete="username"
+              placeholder="e.g. m.santos@school.edu.ph"
+            />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="password">Password <span class="req">*</span></label>
+            <div class="password-wrap">
+              <input
+                class="field-input"
+                type="password"
+                id="password"
+                name="password"
+                minlength="8"
+                required
+                autocomplete="new-password"
+                placeholder="At least 8 characters"
+              />
+              <button type="button" class="toggle-password" id="togglePasswordBtn" aria-label="Show password">Show</button>
+            </div>
+            <div class="field-hint">Must be at least 8 characters with letters & numbers.</div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="confirmPassword">Confirm Password <span class="req">*</span></label>
+            <div class="password-wrap">
+              <input
+                class="field-input"
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                minlength="8"
+                required
+                autocomplete="new-password"
+                placeholder="Re-enter password"
+              />
+              <button type="button" class="toggle-password" id="toggleConfirmPasswordBtn" aria-label="Show password">Show</button>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="title">Title / Position</label>
+            <input
+              class="field-input"
+              type="text"
+              id="title"
+              name="title"
+              placeholder="e.g. Guidance Counselor"
+              value="Guidance Counselor"
+            />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="credentials">Credentials / Licenses</label>
+            <input
+              class="field-input"
+              type="text"
+              id="credentials"
+              name="credentials"
+              placeholder="e.g. MS, LPC, LMHC, RGC"
+              value="RGC"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-dark auth-button" id="signupSubmitBtn">Create Account</button>
+
+          <div class="auth-footer" style="text-align: center; margin-top: 18px; font-size: 13px; color: var(--color-muted);">
+            Already have an account? <a href="/login.html" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Log in here</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/signup.js"></script>
+  </body>
+</html>

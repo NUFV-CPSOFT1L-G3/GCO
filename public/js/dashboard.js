@@ -442,11 +442,19 @@ function formatDateDisplay(isoDate) {
     profileForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const profileError = document.getElementById("profileError");
+      if (profileError) profileError.textContent = "";
+
       const name = document.getElementById("profName").value.trim();
       const credentials = document.getElementById("profTitle").value.trim();
       const selectedAreas = Array.from(document.querySelectorAll('input[name="profAreas"]:checked')).map(
         (cb) => cb.value
       );
+
+      if (!name) {
+        if (profileError) profileError.textContent = "Counselor name cannot be blank.";
+        return;
+      }
 
       if (window.firestoreDb && user.uid) {
         try {
@@ -461,8 +469,25 @@ function formatDateDisplay(isoDate) {
       }
 
       currentProfile.name = name;
+      currentProfile.displayName = name;
       currentProfile.credentials = credentials;
+      currentProfile.title = credentials;
       currentProfile.preferredAreas = selectedAreas;
+
+      // Update cached session in localStorage if present
+      try {
+        const cached = localStorage.getItem("gcounsel_session");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          parsed.name = name;
+          parsed.displayName = name;
+          parsed.credentials = credentials;
+          parsed.preferredAreas = selectedAreas;
+          localStorage.setItem("gcounsel_session", JSON.stringify(parsed));
+        }
+      } catch (err) {
+        console.warn("Session cache update notice:", err);
+      }
 
       profileModal.style.display = "none";
       renderDashboard();

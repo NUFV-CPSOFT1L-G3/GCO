@@ -19,6 +19,29 @@ document.getElementById("loginForm").addEventListener("submit", async (event) =>
   const email = document.getElementById("email").value.trim().toLowerCase();
   const password = document.getElementById("password").value;
 
+  // Client-side form validation
+  if (!email && !password) {
+    errorMessage.textContent = "Please fill in all required fields.";
+    return;
+  }
+  if (!email) {
+    errorMessage.textContent = "Email is required. Please enter your email address.";
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    errorMessage.textContent = "Please enter a valid email address.";
+    return;
+  }
+  if (!password) {
+    errorMessage.textContent = "Password is required. Please enter your password.";
+    return;
+  }
+  if (password.length < 6) {
+    errorMessage.textContent = "Password must be at least 6 characters long.";
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.textContent = "Logging In...";
 
@@ -59,26 +82,16 @@ document.getElementById("loginForm").addEventListener("submit", async (event) =>
           };
         }
       } catch (fbErr) {
-        console.error("Firebase Auth error:", fbErr);
-        if (
-          fbErr.code === "auth/wrong-password" ||
-          fbErr.code === "auth/user-not-found" ||
-          fbErr.code === "auth/invalid-credential" ||
-          fbErr.code === "auth/invalid-email"
-        ) {
-          throw new Error("Invalid email or password. Please verify your credentials.");
-        } else if (fbErr.code === "auth/too-many-requests") {
-          throw new Error("Access temporarily disabled due to many failed login attempts. Please reset password or try again shortly.");
-        } else if (fbErr.code === "auth/api-key-not-valid") {
-          throw new Error("Firebase API key is invalid. Please refresh the page.");
-        } else {
-          throw new Error(fbErr.message || "Failed to sign in with Firebase.");
-        }
+        console.warn("Firebase Auth attempt notice:", fbErr.code, fbErr.message);
+        // Do not throw immediately; proceed to check seeded/local credentials fallback
       }
     }
 
-    // Fallback: check seeded credentials in demo/offline mode
+    // Fallback: check seeded credentials or newly registered accounts in demo/offline mode
     if (!userProfile) {
+      const registeredAccounts = JSON.parse(localStorage.getItem("gcounsel_registered_counselors") || "[]");
+      const matchedLocal = registeredAccounts.find((acc) => acc.email.toLowerCase() === email);
+
       if ((email === "kyle.carandang@nu-fairview.edu.ph" || email === "a.reyes@school.edu.ph") && password === "guidance123") {
         userProfile = {
           id: "counselor_kyle_001",
@@ -96,6 +109,8 @@ document.getElementById("loginForm").addEventListener("submit", async (event) =>
           title: "GCO Administrator",
           role: "admin",
         };
+      } else if (matchedLocal) {
+        userProfile = matchedLocal;
       } else {
         throw new Error("Invalid email or password.");
       }
