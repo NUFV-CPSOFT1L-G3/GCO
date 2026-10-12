@@ -1,5 +1,5 @@
 const { getDb } = require("./utils/firebase-admin");
-const { sendAppointmentConfirmation } = require("./utils/email");
+const { sendAppointmentConfirmation, sendCounselorBookingNotification } = require("./utils/email");
 
 function getTodayISO() {
   const now = new Date();
@@ -227,6 +227,27 @@ exports.handler = async (event) => {
     } catch (emailErr) {
       console.error("sendAppointmentConfirmation notice:", emailErr.message);
       emailStatus = { success: false, error: emailErr.message };
+    }
+
+    // 6. Send Booking Notification Email to Assigned Counselor
+    if (counselorData.email && counselorData.email.toLowerCase() !== fullStudentEmail.toLowerCase()) {
+      try {
+        await sendCounselorBookingNotification({
+          counselorEmail: counselorData.email,
+          counselorName: counselorData.name,
+          studentName: cleanFullName,
+          studentId: cleanStudentId,
+          studentEmail: fullStudentEmail,
+          course: course.trim(),
+          confirmationNumber,
+          date,
+          startTime,
+          endTime: calculatedEndTime,
+          categories,
+        });
+      } catch (counselorEmailErr) {
+        console.error("sendCounselorBookingNotification notice:", counselorEmailErr.message);
+      }
     }
 
     return {

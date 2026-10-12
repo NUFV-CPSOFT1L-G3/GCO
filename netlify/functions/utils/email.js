@@ -321,9 +321,126 @@ ${feedbackUrl}
   return sendEmail({ to: studentEmail, subject, html, text });
 }
 
+/**
+ * Sends New Consultation Booking Notification directly to the Assigned Guidance Counselor
+ */
+async function sendCounselorBookingNotification({
+  counselorEmail,
+  counselorName,
+  studentName,
+  studentId,
+  studentEmail,
+  course,
+  confirmationNumber,
+  date,
+  startTime,
+  endTime,
+  categories,
+}) {
+  if (!counselorEmail) return { success: false, error: "No counselor email" };
+
+  const formattedCategories = Array.isArray(categories) ? categories.join(", ") : categories;
+  const subject = `[GCOunsel] New Consultation Booked - ${confirmationNumber} (${studentName})`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #262626; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; border: 1px solid #dcdcdc; border-radius: 8px; overflow: hidden; }
+        .header { background-color: #1f1f1f; color: #ffffff; padding: 22px; text-align: center; border-bottom: 4px solid #d2a72e; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .content { padding: 24px; background: #ffffff; }
+        .tag-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 14px; margin: 16px 0; color: #166534; font-weight: 700; text-align: center; font-size: 16px; }
+        .details-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+        .details-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+        .details-table td.label { width: 35%; color: #737373; font-weight: 600; }
+        .footer { background: #f5f5f5; padding: 14px; text-align: center; font-size: 11px; color: #737373; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>National University – Fairview</h1>
+          <p style="color:#d2a72e; margin:4px 0 0; font-size:12px;">Guidance Counseling Office · Staff Notification</p>
+        </div>
+        <div class="content">
+          <p>Dear <strong>${counselorName}</strong>,</p>
+          <p>A student has reserved a consultation slot on your schedule:</p>
+
+          <div class="tag-box">
+            Confirmation Number: ${confirmationNumber}
+          </div>
+
+          <table class="details-table">
+            <tr>
+              <td class="label">Student Name</td>
+              <td><strong>${studentName}</strong></td>
+            </tr>
+            <tr>
+              <td class="label">Student ID</td>
+              <td><code>${studentId}</code></td>
+            </tr>
+            <tr>
+              <td class="label">Course / Program</td>
+              <td>${course || "N/A"}</td>
+            </tr>
+            <tr>
+              <td class="label">Student Email</td>
+              <td><a href="mailto:${studentEmail}">${studentEmail}</a></td>
+            </tr>
+            <tr>
+              <td class="label">Consultation Date</td>
+              <td><strong>${date}</strong></td>
+            </tr>
+            <tr>
+              <td class="label">Time Slot</td>
+              <td><strong>${startTime} – ${endTime}</strong></td>
+            </tr>
+            <tr>
+              <td class="label">Reason(s)</td>
+              <td>${formattedCategories}</td>
+            </tr>
+          </table>
+
+          <p style="margin-top:20px; font-size:13px; color:#555;">
+            You can review, manage, or reschedule this session anytime via the <a href="https://nufairview-guidance.cordanya.com/dashboard.html">Counselor Portal</a>.
+          </p>
+        </div>
+        <div class="footer">
+          GCOunsel Automated Notification · NU Fairview Guidance Counseling Office
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+New Consultation Booked - ${confirmationNumber}
+
+Dear ${counselorName},
+A student has booked a consultation slot on your schedule:
+
+Confirmation: ${confirmationNumber}
+Student Name: ${studentName} (${studentId})
+Course: ${course}
+Student Email: ${studentEmail}
+Date: ${date}
+Time: ${startTime} - ${endTime}
+Reason(s): ${formattedCategories}
+
+Manage this appointment on the Counselor Portal: https://nufairview-guidance.cordanya.com/dashboard.html
+  `.trim();
+
+  return sendEmail({ to: counselorEmail, subject, html, text });
+}
+
 module.exports = {
   sendEmail,
   sendAppointmentConfirmation,
   sendAppointmentCancellation,
   sendFeedbackInvitation,
+  sendCounselorBookingNotification,
 };
