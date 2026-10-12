@@ -54,7 +54,7 @@
   status = 200
   force = false
 
-# HTTP Security Headers
+# HTTP Security & Cache Headers
 [[headers]]
   for = "/*"
   [headers.values]
@@ -62,4 +62,14 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
 

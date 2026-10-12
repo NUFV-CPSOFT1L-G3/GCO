@@ -70,7 +70,10 @@ exports.handler = async (event) => {
     const fullStudentEmail = rawEmailInput.includes("@")
       ? rawEmailInput.toLowerCase()
       : `${rawEmailInput.replace(/@.*$/, "").toLowerCase()}@students.nu-fairview.edu.ph`;
-    const cleanStudentId = studentId.trim();
+    let cleanStudentId = studentId.trim();
+    if (/^20\d{6,}$/.test(studentIdDigits) && !cleanStudentId.includes("-")) {
+      cleanStudentId = `${studentIdDigits.slice(0, 4)}-${studentIdDigits.slice(4)}`;
+    }
     const cleanFullName = fullName.trim();
     const todayISO = getTodayISO();
 

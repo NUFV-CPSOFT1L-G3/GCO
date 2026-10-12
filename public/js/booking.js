@@ -208,8 +208,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const cleanDigits = studentId.replace(/\D/g, "");
     if (!cleanDigits || cleanDigits.length < 6 || cleanDigits.length > 20 || /[^\d\s-]/.test(studentId)) {
-      setFormError("Please enter a valid Student ID number (e.g. 2024-123456 or 2024123456).");
+      setFormError("Please enter a valid Student ID number (e.g. 2024-1035566 or 20241035566).");
       return;
+    }
+
+    // Auto-normalize student ID to 20XX-XXXXXXX format if typed without hyphen
+    let formattedStudentId = studentId;
+    if (/^20\d{6,}$/.test(cleanDigits) && !studentId.includes("-")) {
+      formattedStudentId = `${cleanDigits.slice(0, 4)}-${cleanDigits.slice(4)}`;
+      const studentIdInput = document.getElementById("studentId");
+      if (studentIdInput) studentIdInput.value = formattedStudentId;
     }
 
     if (!emailUsername) {
@@ -252,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName,
-          studentId,
+          studentId: formattedStudentId,
           emailUsername,
           course,
           categories: checkedCategories,
@@ -310,6 +318,17 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/\"/g, "&quot;");
+  }
+
+  const studentIdInput = document.getElementById("studentId");
+  if (studentIdInput) {
+    studentIdInput.addEventListener("blur", () => {
+      const val = studentIdInput.value.trim();
+      const digits = val.replace(/\D/g, "");
+      if (/^20\d{6,}$/.test(digits) && !val.includes("-")) {
+        studentIdInput.value = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      }
+    });
   }
 
   loadCounselors();

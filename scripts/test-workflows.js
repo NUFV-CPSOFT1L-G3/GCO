@@ -61,10 +61,16 @@ async function runTests() {
 
   res = await bookAppointmentFn({
     httpMethod: "POST",
+    body: JSON.stringify({ fullName: "Test Student", studentId: "20241035566", emailUsername: "testuser" }),
+  });
+  assert.notStrictEqual(JSON.parse(res.body).error, "Valid Student ID is required (e.g. 2024-123456 or 2024123456).", "Should accept exact 11-digit Student ID 20241035566 without hyphen");
+
+  res = await bookAppointmentFn({
+    httpMethod: "POST",
     body: JSON.stringify({ fullName: "Test Student", studentId: "2024-1002345678", emailUsername: "testuser" }),
   });
   assert.notStrictEqual(JSON.parse(res.body).error, "Valid Student ID is required (e.g. 2024-123456 or 2024123456).", "Should accept longer Student ID");
-  console.log("✓ TEST 1 PASSED: Validation correctly rejected invalid input and accepted flexible student ID formats.");
+  console.log("✓ TEST 1 PASSED: Validation correctly rejected invalid input and accepted flexible student ID formats (including 20241035566).");
 
   // -------------------------------------------------------------------------
   // TEST 2: Successful Appointment Booking & Confirmation Number Generation
