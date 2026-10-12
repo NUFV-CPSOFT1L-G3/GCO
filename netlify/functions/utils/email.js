@@ -30,7 +30,7 @@ function createTransporter() {
   return null;
 }
 
-const DEFAULT_FROM = process.env.FROM_EMAIL || '"NU Fairview Guidance Counseling Office" <gco.nufairview@gmail.com>';
+const DEFAULT_FROM = process.env.FROM_EMAIL || '"NU Fairview Guidance Counseling Office" <nufvgcounsel@gmail.com>';
 
 async function sendEmail({ to, subject, html, text }) {
   const transporter = createTransporter();
