@@ -41,13 +41,26 @@ async function runTests() {
   });
   assert.strictEqual(res.statusCode, 400, "Should reject missing full name");
 
-  // Invalid Student ID format
+  // Invalid Student ID format (letters / non-digits)
   res = await bookAppointmentFn({
     httpMethod: "POST",
     body: JSON.stringify({ fullName: "Test Student", studentId: "INVALID-ID", emailUsername: "testuser" }),
   });
-  assert.strictEqual(res.statusCode, 400, "Should reject invalid student ID format");
-  console.log("✓ TEST 1 PASSED: Validation correctly rejected invalid input.");
+  assert.strictEqual(res.statusCode, 400, "Should reject invalid student ID format with letters");
+
+  // Verify Student ID without hyphens and longer lengths pass ID format check (fails next step like course/counselor, not ID)
+  res = await bookAppointmentFn({
+    httpMethod: "POST",
+    body: JSON.stringify({ fullName: "Test Student", studentId: "2024100234", emailUsername: "testuser" }),
+  });
+  assert.notStrictEqual(JSON.parse(res.body).error, "Valid Student ID is required (e.g. 2024-123456 or 2024123456).", "Should accept Student ID without hyphens");
+
+  res = await bookAppointmentFn({
+    httpMethod: "POST",
+    body: JSON.stringify({ fullName: "Test Student", studentId: "2024-1002345678", emailUsername: "testuser" }),
+  });
+  assert.notStrictEqual(JSON.parse(res.body).error, "Valid Student ID is required (e.g. 2024-123456 or 2024123456).", "Should accept longer Student ID");
+  console.log("✓ TEST 1 PASSED: Validation correctly rejected invalid input and accepted flexible student ID formats.");
 
   // -------------------------------------------------------------------------
   // TEST 2: Successful Appointment Booking & Confirmation Number Generation

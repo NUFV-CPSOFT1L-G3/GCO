@@ -188,8 +188,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!/^\d{4}-\d{6}$/.test(studentId)) {
-      setFormError("Student ID must follow the format: 20XX-XXXXXX (e.g. 2024-123456).");
+    const cleanDigits = studentId.replace(/\D/g, "");
+    if (!cleanDigits || cleanDigits.length < 6 || cleanDigits.length > 20 || /[^\d\s-]/.test(studentId)) {
+      setFormError("Please enter a valid Student ID number (e.g. 2024-123456 or 2024123456).");
       return;
     }
 

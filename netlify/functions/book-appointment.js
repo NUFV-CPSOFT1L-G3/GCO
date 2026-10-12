@@ -36,10 +36,12 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "Full Name is required." }) };
     }
 
-    if (!studentId || !/^\d{4}-\d{6}$/.test(studentId.trim())) {
+    const trimmedStudentId = (studentId || "").trim();
+    const studentIdDigits = trimmedStudentId.replace(/\D/g, "");
+    if (!studentIdDigits || studentIdDigits.length < 6 || studentIdDigits.length > 20 || /[^\d\s-]/.test(trimmedStudentId)) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Valid Student ID is required (format: 20XX-XXXXXX)." }),
+        body: JSON.stringify({ error: "Valid Student ID is required (e.g. 2024-123456 or 2024123456)." }),
       };
     }
 
