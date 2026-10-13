@@ -63,7 +63,7 @@ exports.handler = async (event) => {
       if (a.status === "no-show") counselorStats[cName].noShow++;
       if (a.status === "cancelled") counselorStats[cName].cancelled++;
 
-      allAppointments.push(a);
+      allAppointments.push({ ...a, id: doc.id });
     });
 
     // 2. Fetch feedback

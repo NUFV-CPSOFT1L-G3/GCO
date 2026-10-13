@@ -15,6 +15,7 @@ process.env.USE_LOCAL_FALLBACK = "true";
 process.env.NODE_ENV = "test";
 
 const assert = require("assert");
+const { getDb } = require("../netlify/functions/utils/firebase-admin");
 const bookAppointmentFn = require("../netlify/functions/book-appointment").handler;
 const getAvailabilityFn = require("../netlify/functions/get-availability").handler;
 const updateStatusFn = require("../netlify/functions/update-appointment-status").handler;
@@ -32,6 +33,24 @@ async function runTests() {
   // Ensure not Sunday
   if (futureDate.getDay() === 0) futureDate.setDate(futureDate.getDate() + 1);
   const testDate = futureDate.toISOString().slice(0, 10);
+  const counselorId = `counselor_test_${Date.now()}`;
+  const testDb = getDb();
+  await testDb.collection("counselors").doc(counselorId).set({
+    id: counselorId,
+    name: "Workflow Test Counselor",
+    email: `${counselorId}@example.test`,
+    role: "counselor",
+    defaultDurationMinutes: 30,
+    weeklyHours: Array.from({ length: 7 }, (_, dayOfWeek) => ({
+      dayOfWeek,
+      isActive: true,
+      startTime: "08:00",
+      endTime: "17:00",
+    })),
+    blockedDates: [],
+    sessionsHandled: 0,
+    sessionsCompleted: 0,
+  });
 
   // -------------------------------------------------------------------------
   // TEST 1: Form Validation
@@ -88,7 +107,7 @@ async function runTests() {
       emailUsername: testUsername,
       course: "BS Information Technology",
       categories: ["Academic", "Career"],
-      counselorId: "counselor_reyes_001",
+      counselorId,
       date: testDate,
       startTime: "10:00",
       endTime: "10:30",
@@ -122,7 +141,7 @@ async function runTests() {
       emailUsername: `another_${Date.now()}`,
       course: "BS Computer Science",
       categories: ["Personal"],
-      counselorId: "counselor_reyes_001",
+      counselorId,
       date: testDate,
       startTime: "10:00", // Same slot!
       endTime: "10:30",
@@ -146,7 +165,7 @@ async function runTests() {
       emailUsername: testUsername,
       course: "BS Information Technology",
       categories: ["Career"],
-      counselorId: "counselor_santos_002",
+      counselorId,
       date: testDate,
       startTime: "14:00",
       endTime: "14:30",
@@ -164,7 +183,7 @@ async function runTests() {
 
   const availRes = await getAvailabilityFn({
     httpMethod: "GET",
-    queryStringParameters: { counselorId: "counselor_reyes_001", date: testDate },
+    queryStringParameters: { counselorId, date: testDate },
   });
   assert.strictEqual(availRes.statusCode, 200);
   const availData = JSON.parse(availRes.body);
@@ -220,7 +239,7 @@ async function runTests() {
       emailUsername: `fbuser_${Date.now()}`,
       course: "BS Psychology",
       categories: ["Personal"],
-      counselorId: "counselor_reyes_001",
+      counselorId,
       date: testDate,
       startTime: "15:00",
       endTime: "15:30",

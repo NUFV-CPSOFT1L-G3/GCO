@@ -44,33 +44,40 @@ function formatDateDisplay(isoDate) {
     }
   }
 
-  // Fetch today's appointments for this counselor
-  async function fetchTodayAppointments() {
+  // Fetch today's appointments and still-pending appointments from earlier dates.
+  async function fetchDashboardAppointments() {
     const appointments = [];
+    let querySucceeded = false;
     if (window.firestoreDb) {
       try {
         const query = await window.firestoreDb
           .collection("appointments")
           .where("counselorId", "==", user.uid || user.id)
-          .where("date", "==", todayISO)
+          .where("date", "<=", todayISO)
           .get();
 
         query.forEach((doc) => {
-          appointments.push({ id: doc.id, ...doc.data() });
+          const appointment = { id: doc.id, ...doc.data() };
+          if (appointment.date === todayISO || (appointment.date < todayISO && appointment.status === "confirmed")) {
+            appointments.push(appointment);
+          }
         });
+        querySucceeded = true;
       } catch (err) {
         console.warn("Direct Firestore appt query notice:", err.message);
       }
     }
 
     // Fallback: fetch from admin-stats API if direct query was blocked or offline
-    if (!appointments.length) {
+    if (!querySucceeded) {
       try {
         const res = await fetch("/api/admin-stats");
         if (res.ok) {
           const data = await res.json();
           const filtered = (data.appointments || []).filter(
-            (a) => (a.counselorId === (user.uid || user.id) || a.counselorName === user.name) && a.date === todayISO
+            (a) =>
+              (a.counselorId === (user.uid || user.id) || a.counselorName === user.name) &&
+              (a.date === todayISO || (a.date < todayISO && a.status === "confirmed"))
           );
           appointments.push(...filtered);
         }
@@ -79,7 +86,10 @@ function formatDateDisplay(isoDate) {
       }
     }
 
-    appointments.sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+    appointments.sort((a, b) => {
+      const dateComparison = (a.date || "").localeCompare(b.date || "");
+      return dateComparison || (a.startTime || "").localeCompare(b.startTime || "");
+    });
     return appointments;
   }
 
@@ -122,7 +132,7 @@ function formatDateDisplay(isoDate) {
 
   async function renderDashboard() {
     await fetchProfile();
-    const todaysSchedule = await fetchTodayAppointments();
+    const todaysSchedule = await fetchDashboardAppointments();
     const recentFeedback = await fetchRecentFeedback();
 
     const preferredAreas = currentProfile.preferredAreas || [
@@ -176,19 +186,19 @@ function formatDateDisplay(isoDate) {
             </button>
           </div>
 
-          <!-- Right Column: Today's Schedule & Yesterday's Feedback -->
+          <!-- Right Column: Today's Schedule, Past Pending Appointments & Feedback -->
           <div class="counselor-schedule-col">
-            <!-- Today's Schedule Card -->
+            <!-- Today's Schedule and outstanding past appointments -->
             <div class="card" style="padding: 24px; margin-bottom: 24px;">
               <div class="section-title">
-                <span>Today's Schedule</span>
+                <span>Today's Schedule & Pending Past Appointments</span>
                 <a href="/schedule.html" class="see-all">View Full Calendar →</a>
               </div>
 
               <div id="scheduleItemsContainer">
                 ${
                   !todaysSchedule.length
-                    ? `<div class="empty-note">No appointments scheduled for today.</div>`
+                    ? `<div class="empty-note">No appointments scheduled for today or pending from previous dates.</div>`
                     : todaysSchedule
                         .map((appt) => {
                           const statusClass =
@@ -207,6 +217,8 @@ function formatDateDisplay(isoDate) {
                               ? "No-Show"
                               : appt.status === "cancelled"
                               ? "Cancelled"
+                              : appt.date < todayISO
+                              ? "Pending"
                               : "Upcoming";
 
                           const isActionable = appt.status === "confirmed";
@@ -224,6 +236,7 @@ function formatDateDisplay(isoDate) {
                               <div class="appt-main-col">
                                 <div class="appt-student-name">${escapeHtml(appt.studentName)}</div>
                                 <div class="appt-student-meta">
+                                  ${appt.date < todayISO ? `${formatDateDisplay(appt.date)} · ` : ""}
                                   ${escapeHtml(appt.course || "")} · ${escapeHtml(Array.isArray(appt.categories) ? appt.categories.join(", ") : appt.categories || "")}
                                 </div>
                                 <div class="appt-conf-tag">Ref: ${escapeHtml(appt.confirmationNumber || appt.id)}</div>
@@ -235,7 +248,7 @@ function formatDateDisplay(isoDate) {
                                     ? `
                                       <div class="appt-actions-dropdown">
                                         <button type="button" class="btn btn-sm btn-mark-complete" data-id="${appt.id}" title="Mark Consultation Completed">✓ Complete</button>
-                                        <button type="button" class="btn btn-sm btn-mark-noshow" data-id="${appt.id}" title="Mark Student No-Show">✕ No-Show</button>
+                                        ${canMarkNoShow ? `<button type="button" class="btn btn-sm btn-mark-noshow" data-id="${appt.id}" title="Mark Student No-Show">✕ No-Show</button>` : ""}
                                         <button type="button" class="btn btn-sm btn-cancel-appt" data-id="${appt.id}" data-name="${escapeHtml(appt.studentName)}" data-time="${formatTime12h(appt.startTime)}" title="Cancel Consultation">Cancel</button>
                                       </div>
                                     `

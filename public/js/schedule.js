@@ -36,20 +36,38 @@ function formatTime12h(time24) {
   async function fetchMonthAppointments(year, month) {
     const appointments = [];
     const startStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const endStr = `${year}-${String(month + 1).padStart(2, "0")}-31`;
+    const endStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
+    const counselorId = user.uid || user.id;
+
+    if (window.firestoreDb && counselorId) {
+      try {
+        const query = await window.firestoreDb
+          .collection("appointments")
+          .where("counselorId", "==", counselorId)
+          .where("date", ">=", startStr)
+          .where("date", "<=", endStr)
+          .get();
+        query.forEach((doc) => {
+          appointments.push({ id: doc.id, ...doc.data() });
+        });
+        return appointments;
+      } catch (e) {
+        console.warn("Direct Firestore appointment query notice:", e.message);
+      }
+    }
 
     try {
-      const headers = {};
-      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
-        const idToken = await window.firebaseAuth.currentUser.getIdToken();
-        headers.Authorization = `Bearer ${idToken}`;
-      }
-      const query = new URLSearchParams({ startDate: startStr, endDate: endStr });
-      if (!window.firebaseAuth) query.set("counselorId", user.uid || user.id || "");
-      const res = await fetch(`/api/counselor-stats?${query.toString()}`, { headers });
+      const res = await fetch("/api/admin-stats");
       if (res.ok) {
         const data = await res.json();
-        appointments.push(...(data.appointments || []));
+        appointments.push(
+          ...(data.appointments || []).filter(
+            (appointment) =>
+              (appointment.counselorId === counselorId || appointment.counselorName === user.name) &&
+              appointment.date >= startStr &&
+              appointment.date <= endStr
+          )
+        );
       }
     } catch (e) {
       console.error(e);
@@ -175,9 +193,10 @@ function formatTime12h(time24) {
     const dayOfWeek = dateObj.getDay();
     const isSunday = dayOfWeek === 0;
     const isBlocked = Boolean(blockedMap[isoDate]);
+    const dayAppointments = appointments.filter((a) => a.date === isoDate && a.status !== "cancelled");
 
     if (isSunday) {
-      return `<div class="empty-note">The Guidance Counseling Office is closed on Sundays.</div>`;
+      return `<div class="empty-note">The Guidance Counseling Office is closed on Sundays.</div>${renderAdditionalAppointmentRows(dayAppointments)}`;
     }
 
     if (isBlocked) {
@@ -187,6 +206,7 @@ function formatTime12h(time24) {
           Reason: ${escapeHtml(blockedMap[isoDate])}
         </div>
         <p class="field-hint">Students cannot schedule appointments during this date.</p>
+        ${renderAdditionalAppointmentRows(dayAppointments)}
       `;
     }
 
@@ -194,7 +214,7 @@ function formatTime12h(time24) {
     const dayConfig = weeklyHours.find((d) => d.dayOfWeek === dayOfWeek);
 
     if (!dayConfig || !dayConfig.isActive) {
-      return `<div class="empty-note">You are not scheduled for office hours on this day.</div>`;
+      return `<div class="empty-note">You are not scheduled for office hours on this day.</div>${renderAdditionalAppointmentRows(dayAppointments)}`;
     }
 
     // Generate slots
@@ -205,13 +225,13 @@ function formatTime12h(time24) {
     const startTotal = startH * 60 + startM;
     const endTotal = endH * 60 + endM;
 
-    const dayAppointments = appointments.filter((a) => a.date === isoDate && a.status !== "cancelled");
     const apptMap = {};
     dayAppointments.forEach((a) => {
       apptMap[a.startTime] = a;
     });
 
     const rows = [];
+    const displayedAppointmentIds = new Set();
     for (let m = startTotal; m + duration <= endTotal; m += duration) {
       const hStr = String(Math.floor(m / 60)).padStart(2, "0");
       const mStr = String(m % 60).padStart(2, "0");
@@ -225,8 +245,11 @@ function formatTime12h(time24) {
       const appt = apptMap[time24];
 
       if (appt) {
+        displayedAppointmentIds.add(appt.id);
         const statusLabel = appt.status === "completed" ? "Completed" : appt.status === "no-show" ? "No-Show" : appt.status === "cancelled" ? "Cancelled" : "Confirmed";
         const isActionable = appt.status === "confirmed";
+        const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
+        const canMarkNoShow = !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
 
         rows.push(`
           <div class="daily-slot-row slot-booked">
@@ -238,7 +261,7 @@ function formatTime12h(time24) {
               ${isActionable ? `
                 <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                   <button type="button" class="btn btn-sm btn-mark-complete-schedule" data-id="${appt.id}" title="Mark Complete">✓ Complete</button>
-                  <button type="button" class="btn btn-sm btn-mark-noshow-schedule" data-id="${appt.id}" title="Mark No-Show">✕ No-Show</button>
+                  ${canMarkNoShow ? `<button type="button" class="btn btn-sm btn-mark-noshow-schedule" data-id="${appt.id}" title="Mark No-Show">✕ No-Show</button>` : ""}
                 </div>
               ` : ""}
             </div>
@@ -257,7 +280,43 @@ function formatTime12h(time24) {
       }
     }
 
-    return rows.join("");
+    const unplacedAppointments = dayAppointments.filter((appointment) => !displayedAppointmentIds.has(appointment.id));
+    return `${rows.join("")}${renderAdditionalAppointmentRows(unplacedAppointments)}`;
+  }
+
+  function renderAdditionalAppointmentRows(appointments) {
+    return appointments
+      .map((appt) => {
+        const statusLabel =
+          appt.status === "completed"
+            ? "Completed"
+            : appt.status === "no-show"
+            ? "No-Show"
+            : appt.status === "cancelled"
+            ? "Cancelled"
+            : "Confirmed";
+        const isActionable = appt.status === "confirmed";
+        const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
+        const canMarkNoShow = !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
+
+        return `
+          <div class="daily-slot-row slot-booked">
+            <div class="slot-time-lbl">${formatTime12h(appt.startTime)}${appt.endTime ? ` – ${formatTime12h(appt.endTime)}` : ""}</div>
+            <div class="slot-status-lbl">
+              <span class="status-badge badge-appointment">${statusLabel}</span>
+              <strong class="slot-student-title">${escapeHtml(appt.studentName)}</strong>
+              <span class="slot-meta-desc">(${escapeHtml(appt.course || "")} · ${escapeHtml(Array.isArray(appt.categories) ? appt.categories.join(", ") : appt.categories || "")})</span>
+              ${isActionable ? `
+                <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-sm btn-mark-complete-schedule" data-id="${appt.id}" title="Mark Complete">✓ Complete</button>
+                  ${canMarkNoShow ? `<button type="button" class="btn btn-sm btn-mark-noshow-schedule" data-id="${appt.id}" title="Mark No-Show">✕ No-Show</button>` : ""}
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        `;
+      })
+      .join("");
   }
 
   function attachCalendarEvents(year, month) {
