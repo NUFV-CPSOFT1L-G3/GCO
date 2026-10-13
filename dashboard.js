@@ -55,11 +55,12 @@ function formatDateDisplay(isoDate) {
         const idToken = await window.firebaseAuth.currentUser.getIdToken();
         headers.Authorization = `Bearer ${idToken}`;
       }
-      const query = new URLSearchParams({ counselorId: user.uid || user.id || "" });
+      const query = new URLSearchParams();
+      if (!window.firebaseAuth) query.set("counselorId", user.uid || user.id || "");
       const res = await fetch(`/api/counselor-stats?${query.toString()}`, { headers });
       if (!res.ok) throw new Error(`Appointment request failed (${res.status}).`);
       const data = await res.json();
-      appointments.push(...(data.appointments || []).filter((a) => a.status === "pending" || a.status === "confirmed"));
+      appointments.push(...(data.appointments || []).filter(isActiveAppointment));
     } catch (err) {
       pendingAppointmentsLoadFailed = true;
       console.warn("Counselor appointments API notice:", err.message);
@@ -70,11 +71,11 @@ function formatDateDisplay(isoDate) {
         const query = await window.firestoreDb
           .collection("appointments")
           .where("counselorId", "==", user.uid || user.id)
-          .where("status", "in", ["pending", "confirmed"])
           .get();
 
         query.forEach((doc) => {
-          appointments.push({ id: doc.id, ...doc.data() });
+          const appointment = { id: doc.id, ...doc.data() };
+          if (isActiveAppointment(appointment)) appointments.push(appointment);
         });
         pendingAppointmentsLoadFailed = false;
       } catch (err) {
@@ -88,6 +89,10 @@ function formatDateDisplay(isoDate) {
       return dateOrder || (a.startTime || "").localeCompare(b.startTime || "");
     });
     return appointments;
+  }
+
+  function isActiveAppointment(appointment) {
+    return !["completed", "cancelled", "no-show"].includes(String(appointment.status || "").toLowerCase());
   }
 
   // Fetch recent feedback for this counselor
@@ -153,9 +158,10 @@ function formatDateDisplay(isoDate) {
                 ? `<div class="empty-note">${pendingAppointmentsLoadFailed ? "Appointments could not be loaded. Please refresh or open the schedule calendar." : "No pending appointments."}</div>`
                 : pendingAppointments
                     .map((appt) => {
-                      const statusClass = appt.status === "pending" ? "badge-upcoming" : "badge-upcoming";
-                      const statusLabel = appt.status === "pending" ? "Pending" : "Confirmed";
-                      const isActionable = appt.status === "pending" || appt.status === "confirmed";
+                      const isPending = appt.status !== "confirmed";
+                      const statusClass = "badge-upcoming";
+                      const statusLabel = isPending ? "Pending" : "Confirmed";
+                      const isActionable = isActiveAppointment(appt);
                       const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
                       const canMarkNoShow = isActionable && !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
                       return `
@@ -173,7 +179,7 @@ function formatDateDisplay(isoDate) {
                             <span class="status-badge ${statusClass}">${statusLabel}</span>
                             ${isActionable ? `
                               <div class="appt-actions-dropdown">
-                                ${appt.status === "pending" ? `<button type="button" class="btn btn-sm btn-confirm-appt" data-id="${escapeHtml(appt.id)}" title="Confirm Appointment">✓ Confirm</button>` : `<button type="button" class="btn btn-sm btn-mark-complete" data-id="${escapeHtml(appt.id)}" title="Mark Consultation Completed">✓ Complete</button>`}
+                                ${isPending ? `<button type="button" class="btn btn-sm btn-confirm-appt" data-id="${escapeHtml(appt.id)}" title="Confirm Appointment">✓ Confirm</button>` : `<button type="button" class="btn btn-sm btn-mark-complete" data-id="${escapeHtml(appt.id)}" title="Mark Consultation Completed">✓ Complete</button>`}
                                 <button type="button" class="btn btn-sm btn-mark-noshow" data-id="${escapeHtml(appt.id)}" ${canMarkNoShow ? "" : "disabled"} title="${canMarkNoShow ? "Mark Student No-Show" : "Available after the appointment ends"}">✕ No-Show</button>
                                 <button type="button" class="btn btn-sm btn-cancel-appt" data-id="${escapeHtml(appt.id)}" data-name="${escapeHtml(appt.studentName)}" data-time="${formatTime12h(appt.startTime)}" data-date="${escapeHtml(appt.date)}" title="Cancel Consultation">Cancel</button>
                               </div>
