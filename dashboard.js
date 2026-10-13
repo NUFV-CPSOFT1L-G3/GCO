@@ -29,6 +29,7 @@ function formatDateDisplay(isoDate) {
 
   let currentProfile = user;
   const todayISO = getTodayISO();
+  let pendingAppointmentsLoadFailed = false;
 
   // Load latest counselor profile from Firestore if available
   async function fetchProfile() {
@@ -47,7 +48,24 @@ function formatDateDisplay(isoDate) {
   // Fetch all pending appointments for this counselor
   async function fetchPendingAppointments() {
     const appointments = [];
-    if (window.firestoreDb) {
+    pendingAppointmentsLoadFailed = false;
+    try {
+      const headers = {};
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        const idToken = await window.firebaseAuth.currentUser.getIdToken();
+        headers.Authorization = `Bearer ${idToken}`;
+      }
+      const query = new URLSearchParams({ counselorId: user.uid || user.id || "" });
+      const res = await fetch(`/api/counselor-stats?${query.toString()}`, { headers });
+      if (!res.ok) throw new Error(`Appointment request failed (${res.status}).`);
+      const data = await res.json();
+      appointments.push(...(data.appointments || []).filter((a) => a.status === "pending" || a.status === "confirmed"));
+    } catch (err) {
+      pendingAppointmentsLoadFailed = true;
+      console.warn("Counselor appointments API notice:", err.message);
+    }
+
+    if (!appointments.length && window.firestoreDb) {
       try {
         const query = await window.firestoreDb
           .collection("appointments")
@@ -58,30 +76,10 @@ function formatDateDisplay(isoDate) {
         query.forEach((doc) => {
           appointments.push({ id: doc.id, ...doc.data() });
         });
+        pendingAppointmentsLoadFailed = false;
       } catch (err) {
+        pendingAppointmentsLoadFailed = true;
         console.warn("Direct Firestore appt query notice:", err.message);
-      }
-    }
-
-    // Fallback: fetch from admin-stats API if direct query was blocked or offline
-    if (!appointments.length) {
-      try {
-        const headers = {};
-        if (window.firebaseAuth && window.firebaseAuth.currentUser) {
-          const idToken = await window.firebaseAuth.currentUser.getIdToken();
-          headers.Authorization = `Bearer ${idToken}`;
-        }
-        const query = new URLSearchParams({ counselorId: user.uid || user.id || "" });
-        const res = await fetch(`/api/counselor-stats?${query.toString()}`, { headers });
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = (data.appointments || []).filter(
-            (a) => a.status === "pending" || a.status === "confirmed"
-          );
-          appointments.push(...filtered);
-        }
-      } catch (e) {
-        console.error(e);
       }
     }
 
@@ -144,6 +142,51 @@ function formatDateDisplay(isoDate) {
         <h1 class="pagetitle">Guidance Counselor Portal</h1>
         <p class="pagesub">Today is ${formatDateDisplay(todayISO)} · Consultation Schedule and Activities</p>
 
+        <section class="card" style="padding: 24px; margin-bottom: 24px;">
+          <div class="section-title">
+            <span>Pending Appointments</span>
+            <a href="/schedule.html" class="see-all">View Full Calendar →</a>
+          </div>
+          <div id="scheduleItemsContainer">
+            ${
+              !pendingAppointments.length
+                ? `<div class="empty-note">${pendingAppointmentsLoadFailed ? "Appointments could not be loaded. Please refresh or open the schedule calendar." : "No pending appointments."}</div>`
+                : pendingAppointments
+                    .map((appt) => {
+                      const statusClass = appt.status === "pending" ? "badge-upcoming" : "badge-upcoming";
+                      const statusLabel = appt.status === "pending" ? "Pending" : "Confirmed";
+                      const isActionable = appt.status === "pending" || appt.status === "confirmed";
+                      const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
+                      const canMarkNoShow = isActionable && !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
+                      return `
+                        <div class="appt-card-row">
+                          <div class="appt-time-col">
+                            <strong>${formatTime12h(appt.startTime)}</strong>
+                            <span class="appt-end-time">${formatTime12h(appt.endTime)}</span>
+                          </div>
+                          <div class="appt-main-col">
+                            <div class="appt-student-name">${escapeHtml(appt.studentName)}</div>
+                            <div class="appt-student-meta">${escapeHtml(formatDateDisplay(appt.date))} · ${escapeHtml(appt.course || "")} · ${escapeHtml(Array.isArray(appt.categories) ? appt.categories.join(", ") : appt.categories || "")}</div>
+                            <div class="appt-conf-tag">Ref: ${escapeHtml(appt.confirmationNumber || appt.id)}</div>
+                          </div>
+                          <div class="appt-status-col">
+                            <span class="status-badge ${statusClass}">${statusLabel}</span>
+                            ${isActionable ? `
+                              <div class="appt-actions-dropdown">
+                                ${appt.status === "pending" ? `<button type="button" class="btn btn-sm btn-confirm-appt" data-id="${escapeHtml(appt.id)}" title="Confirm Appointment">✓ Confirm</button>` : `<button type="button" class="btn btn-sm btn-mark-complete" data-id="${escapeHtml(appt.id)}" title="Mark Consultation Completed">✓ Complete</button>`}
+                                <button type="button" class="btn btn-sm btn-mark-noshow" data-id="${escapeHtml(appt.id)}" ${canMarkNoShow ? "" : "disabled"} title="${canMarkNoShow ? "Mark Student No-Show" : "Available after the appointment ends"}">✕ No-Show</button>
+                                <button type="button" class="btn btn-sm btn-cancel-appt" data-id="${escapeHtml(appt.id)}" data-name="${escapeHtml(appt.studentName)}" data-time="${formatTime12h(appt.startTime)}" data-date="${escapeHtml(appt.date)}" title="Cancel Consultation">Cancel</button>
+                              </div>
+                            ` : ""}
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join("")
+            }
+          </div>
+        </section>
+
         <div class="counselor-home-grid">
           <!-- Left Column: Counselor Profile Card (GCO Web Screen 1) -->
           <div class="card counselor-profile-card">
@@ -187,73 +230,6 @@ function formatDateDisplay(isoDate) {
 
           <!-- Right Column: Pending Appointments & Recent Feedback -->
           <div class="counselor-schedule-col">
-            <!-- Pending Appointments Card -->
-            <div class="card" style="padding: 24px; margin-bottom: 24px;">
-              <div class="section-title">
-                <span>Pending Appointments</span>
-                <a href="/schedule.html" class="see-all">View Full Calendar →</a>
-              </div>
-
-              <div id="scheduleItemsContainer">
-                ${
-                  !pendingAppointments.length
-                    ? `<div class="empty-note">No pending appointments.</div>`
-                    : pendingAppointments
-                        .map((appt) => {
-                          const statusClass =
-                            appt.status === "pending"
-                              ? "badge-upcoming"
-                              : appt.status === "completed"
-                              ? "badge-completed"
-                              : appt.status === "no-show"
-                              ? "badge-noshow"
-                              : appt.status === "cancelled"
-                              ? "badge-cancelled"
-                              : "badge-upcoming";
-
-                          const statusLabel = appt.status === "pending" ? "Pending" : "Confirmed";
-
-                          const isActionable = appt.status === "pending" || appt.status === "confirmed";
-
-                          // No-Show will only appear after the scheduled appointment ends.
-                          const apptEnd = new Date(`${appt.date}T${appt.endTime || appt.startTime}:00`);
-                          const canMarkNoShow = isActionable && !isNaN(apptEnd.getTime()) && apptEnd.getTime() <= Date.now();
-                          
-                          return `
-                            <div class="appt-card-row">
-                              <div class="appt-time-col">
-                                <strong>${formatTime12h(appt.startTime)}</strong>
-                                <span class="appt-end-time">${formatTime12h(appt.endTime)}</span>
-                              </div>
-                              <div class="appt-main-col">
-                                <div class="appt-student-name">${escapeHtml(appt.studentName)}</div>
-                                <div class="appt-student-meta">
-                                  ${escapeHtml(formatDateDisplay(appt.date))} · ${escapeHtml(appt.course || "")} · ${escapeHtml(Array.isArray(appt.categories) ? appt.categories.join(", ") : appt.categories || "")}
-                                </div>
-                                <div class="appt-conf-tag">Ref: ${escapeHtml(appt.confirmationNumber || appt.id)}</div>
-                              </div>
-                              <div class="appt-status-col">
-                                <span class="status-badge ${statusClass}">${statusLabel}</span>
-                                ${
-                                  isActionable
-                                    ? `
-                                      <div class="appt-actions-dropdown">
-                                        ${appt.status === "pending" ? `<button type="button" class="btn btn-sm btn-confirm-appt" data-id="${appt.id}" title="Confirm Appointment">✓ Confirm</button>` : `<button type="button" class="btn btn-sm btn-mark-complete" data-id="${appt.id}" title="Mark Consultation Completed">✓ Complete</button>`}
-                                        <button type="button" class="btn btn-sm btn-mark-noshow" data-id="${appt.id}" ${canMarkNoShow ? "" : "disabled"} title="${canMarkNoShow ? "Mark Student No-Show" : "Available after the appointment ends"}">✕ No-Show</button>
-                                        <button type="button" class="btn btn-sm btn-cancel-appt" data-id="${appt.id}" data-name="${escapeHtml(appt.studentName)}" data-time="${formatTime12h(appt.startTime)}" data-date="${escapeHtml(appt.date)}" title="Cancel Consultation">Cancel</button>
-                                      </div>
-                                    `
-                                    : ""
-                                }
-                              </div>
-                            </div>
-                          `;
-                        })
-                        .join("")
-                }
-              </div>
-            </div>
-
             <!-- Yesterday's / Recent Feedback Card -->
             <div class="card" style="padding: 24px;">
               <div class="section-title">
