@@ -173,12 +173,20 @@ exports.handler = async (event) => {
   // 3. DELETE: Remove counselor account (Auth + Firestore)
   if (event.httpMethod === "DELETE") {
     try {
-      const { counselorId } = JSON.parse(event.body || "{}");
+      const { counselorId, currentUserId, currentUserEmail } = JSON.parse(event.body || "{}");
       if (!counselorId) {
         return { statusCode: 400, body: JSON.stringify({ error: "counselorId is required." }) };
       }
 
-      // Root administrator protection
+      // Self-removal protection by ID
+      if (currentUserId && counselorId === currentUserId) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "You cannot remove your own active administrator account." }),
+        };
+      }
+
+      // Root administrator & self-removal protection by email
       let targetEmail = "";
       const counselorDoc = await db.collection("counselors").doc(counselorId).get();
       if (counselorDoc.exists) {
@@ -191,6 +199,12 @@ exports.handler = async (event) => {
           return {
             statusCode: 403,
             body: JSON.stringify({ error: "Cannot delete primary root administrator account." }),
+          };
+        }
+        if (currentUserEmail && targetEmail === currentUserEmail.toLowerCase().trim()) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "You cannot remove your own active administrator account." }),
           };
         }
       }

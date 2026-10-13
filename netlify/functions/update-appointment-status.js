@@ -88,11 +88,16 @@ exports.handler = async (event) => {
 
     // If marked Completed, increment counselor completed counter and send feedback invitation
     if (normalizedStatus === "completed") {
+      let liveCounselorName = apptData.counselorName;
       if (apptData.counselorId) {
         const counselorRef = db.collection("counselors").doc(apptData.counselorId);
         const counselorDoc = await counselorRef.get();
         if (counselorDoc.exists) {
-          const currentCompleted = counselorDoc.data().sessionsCompleted || 0;
+          const cData = counselorDoc.data();
+          if (cData && cData.name) {
+            liveCounselorName = cData.name;
+          }
+          const currentCompleted = cData.sessionsCompleted || 0;
           await counselorRef.update({ sessionsCompleted: currentCompleted + 1 });
         }
       }
@@ -102,7 +107,7 @@ exports.handler = async (event) => {
         studentEmail: apptData.studentEmail,
         studentName: apptData.studentName,
         confirmationNumber: apptData.confirmationNumber,
-        counselorName: apptData.counselorName,
+        counselorName: liveCounselorName,
         appointmentId,
       });
     }

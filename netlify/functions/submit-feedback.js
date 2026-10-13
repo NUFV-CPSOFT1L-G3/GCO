@@ -17,12 +17,24 @@ exports.handler = async (event) => {
       }
 
       const data = apptDoc.data();
+      let counselorName = data.counselorName || "Guidance Counselor";
+      if (data.counselorId) {
+        try {
+          const cDoc = await db.collection("counselors").doc(data.counselorId).get();
+          if (cDoc.exists && cDoc.data() && cDoc.data().name) {
+            counselorName = cDoc.data().name;
+          }
+        } catch (cErr) {
+          // ignore error and fallback to stored name
+        }
+      }
+
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           appointmentId,
-          counselorName: data.counselorName,
+          counselorName,
           counselorId: data.counselorId,
           confirmationNumber: data.confirmationNumber,
           date: data.date,

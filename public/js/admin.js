@@ -149,6 +149,12 @@
         const isRootAdmin =
           (c.email || "").toLowerCase() === "kylecarandang.work@gmail.com" ||
           (c.email || "").toLowerCase() === "kyle.carandang@nu-fairview.edu.ph";
+        const isSelf =
+          Boolean(user) &&
+          (
+            (c.id && (c.id === user.uid || c.id === user.id)) ||
+            (c.email && user.email && c.email.toLowerCase().trim() === user.email.toLowerCase().trim())
+          );
         const roleLabel = c.role === "admin" ? "Office Administrator" : "Guidance Counselor";
         const roleBadgeClass = c.role === "admin" ? "badge-role-admin" : "badge-role-counselor";
         const statusLabel = c.status === "inactive" ? "Inactive" : "Active";
@@ -187,6 +193,8 @@
               ${
                 isRootAdmin
                   ? `<span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Primary Admin</span>`
+                  : isSelf
+                  ? `<span style="font-size: 11px; color: #166534; font-weight: 700; background: #f0fdf4; padding: 4px 10px; border-radius: 4px; border: 1px solid #bbf7d0;">You (Current Session)</span>`
                   : `<button type="button" class="btn btn-sm btn-danger delete-counselor-btn" data-counselor-id="${escapeHtml(c.id)}" data-counselor-name="${escapeHtml(c.name)}">Remove</button>`
               }
             </td>
@@ -828,20 +836,31 @@
         const cId = btn.dataset.counselorId;
         const cName = btn.dataset.counselorName;
 
+        const targetCounselor = counselorsList.find((c) => c.id === cId);
+        const targetEmail = targetCounselor ? (targetCounselor.email || "").toLowerCase().trim() : "";
+        const myEmail = user && user.email ? user.email.toLowerCase().trim() : "";
+        const myId = user ? (user.uid || user.id) : "";
+
+        if ((myId && cId === myId) || (myEmail && targetEmail === myEmail)) {
+          alert("You cannot remove your own active administrator account.");
+          return;
+        }
+
         if (!confirm(`Are you sure you want to remove the staff account for ${cName}?`)) {
           return;
         }
 
         try {
-          const targetCounselor = counselorsList.find((c) => c.id === cId);
-          const targetEmail = targetCounselor ? (targetCounselor.email || "").toLowerCase() : "";
-
           // Attempt DELETE via API
           try {
             await fetch("/api/admin-counselors", {
               method: "DELETE",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ counselorId: cId }),
+              body: JSON.stringify({
+                counselorId: cId,
+                currentUserId: myId || null,
+                currentUserEmail: myEmail || null,
+              }),
             });
           } catch (apiErr) {
             console.warn("API delete notice:", apiErr);

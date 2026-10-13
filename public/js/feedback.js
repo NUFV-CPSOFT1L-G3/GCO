@@ -52,6 +52,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Show Survey Form
     counselorTargetName.textContent = data.counselorName || "Guidance Counselor";
+    const sessionBadge = document.getElementById("sessionBadgeInfo");
+    if (sessionBadge) {
+      const parts = [];
+      if (data.confirmationNumber) parts.push(`Consultation: ${data.confirmationNumber}`);
+      if (data.date) parts.push(`Date: ${data.date}`);
+      if (parts.length > 0) {
+        sessionBadge.textContent = parts.join(" • ");
+        sessionBadge.style.display = "inline-block";
+      }
+    }
     surveyFormArea.style.display = "block";
   } catch (err) {
     loadingBox.style.display = "none";
