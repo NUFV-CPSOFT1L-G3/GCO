@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administrator Analytics & Monitoring — GCOunsel</title>
+    <link rel="stylesheet" href="/css/base.css" />
+  </head>
+  <body>
+    <div class="app" id="app"></div>
+
+    <!-- Create Counselor Account Modal -->
+    <div class="modal-overlay" id="newCounselorModal" style="display: none;">
+      <div class="modal-card" style="max-width: 500px;">
+        <h3 class="modal-title">Provision Counselor / Staff Account</h3>
+        <p class="modal-desc">Register a new guidance counselor or administrative staff member to scale GCO capacity.</p>
+
+        <form id="newCounselorForm">
+          <div class="field-block">
+            <label class="field-label" for="newCRole">Account Role <span class="req">*</span></label>
+            <select id="newCRole" class="field-input" required>
+              <option value="counselor">Guidance Counselor</option>
+              <option value="admin">Office Administrator</option>
+            </select>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCName">Full Name <span class="req">*</span></label>
+            <input type="text" id="newCName" class="field-input" placeholder="e.g. Maria Santos" required />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCTitle">Title / Position</label>
+            <input type="text" id="newCTitle" class="field-input" placeholder="e.g. Guidance Counselor" value="Guidance Counselor" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCCredentials">Credentials / Licenses</label>
+            <input type="text" id="newCCredentials" class="field-input" placeholder="e.g. MS, RGC, RPm" value="RGC" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCEmail">Institutional Email <span class="req">*</span></label>
+            <input type="email" id="newCEmail" class="field-input" placeholder="e.g. m.santos@nu-fairview.edu.ph" required />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Specialization / Consultation Areas</label>
+            <div class="checkbox-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; font-size: 13px; margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Academic" checked /> Academic</label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Career" checked /> Career</label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Personal" checked /> Personal</label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Mental Wellness" checked /> Mental Wellness</label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Family" checked /> Family</label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" name="newCAreas" value="Social" checked /> Social</label>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="newCPassword">Temporary Password <span class="req">*</span></label>
+            <input type="password" id="newCPassword" class="field-input" placeholder="At least 6 characters" minlength="6" required />
+          </div>
+
+          <div class="errorMessage" id="newCError"></div>
+
+          <div class="modal-actions" style="margin-top: 18px;">
+            <button type="button" class="btn" id="closeNewCModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-dark" id="submitNewCBtn">Provision Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="cancelModal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Cancel Appointment</h3>
+        <p class="modal-desc" id="cancelApptDetails">Please specify the reason for cancelling this appointment:</p>
+        <form id="cancelForm">
+          <input type="hidden" id="cancelApptId" />
+          <div class="field-block">
+            <label class="field-label" for="cancelReason">Reason for Cancellation <span class="req">*</span></label>
+            <select id="cancelReason" class="field-input" required>
+              <option value="">-- Select Predefined Reason --</option>
+              <option value="Student Requested Cancellation">Student Requested Cancellation</option>
+              <option value="Counselor Unavailable">Counselor Unavailable</option>
+              <option value="Office Closure or Holiday">Office Closure or Holiday</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Others with remarks">Others with remarks</option>
+            </select>
+          </div>
+          <div class="field-block">
+            <label class="field-label" for="cancelRemarks">Remarks / Notes (Optional)</label>
+            <textarea id="cancelRemarks" class="field-input" rows="2" placeholder="Additional explanation..."></textarea>
+          </div>
+          <div class="errorMessage" id="cancelError"></div>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="closeCancelModalBtn">Keep Appointment</button>
+            <button type="submit" class="btn btn-danger" id="confirmCancelBtn">Confirm Cancellation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase Compat CDN Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="/js/firebase-config.js?v=20261013c"></script>
+    <script src="/js/auth.js?v=20261013c"></script>
+    <script src="/js/nav.js?v=20261013c"></script>
+    <script src="/js/admin.js?v=20261013c"></script>
+  </body>
+</html>
